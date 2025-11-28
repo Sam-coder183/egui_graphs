@@ -84,15 +84,21 @@ impl PlaylistState {
         if len == 0 {
             return None;
         }
-        
         match self.current_index {
             Some(idx) => {
                 if self.is_shuffled && !self.shuffle_order.is_empty() {
                     let current_shuffle_pos = self.shuffle_order.iter().position(|&x| x == idx)?;
-                    let next_shuffle_pos = (current_shuffle_pos + 1) % self.shuffle_order.len();
-                    Some(self.shuffle_order[next_shuffle_pos])
+                    if current_shuffle_pos + 1 < self.shuffle_order.len() {
+                        Some(self.shuffle_order[current_shuffle_pos + 1])
+                    } else {
+                        None
+                    }
                 } else {
-                    Some((idx + 1) % len)
+                    if idx + 1 < len {
+                        Some(idx + 1)
+                    } else {
+                        None
+                    }
                 }
             }
             None => Some(0),
@@ -104,19 +110,21 @@ impl PlaylistState {
         if len == 0 {
             return None;
         }
-        
         match self.current_index {
             Some(idx) => {
                 if self.is_shuffled && !self.shuffle_order.is_empty() {
                     let current_shuffle_pos = self.shuffle_order.iter().position(|&x| x == idx)?;
-                    let prev_shuffle_pos = if current_shuffle_pos == 0 {
-                        self.shuffle_order.len() - 1
+                    if current_shuffle_pos > 0 {
+                        Some(self.shuffle_order[current_shuffle_pos - 1])
                     } else {
-                        current_shuffle_pos - 1
-                    };
-                    Some(self.shuffle_order[prev_shuffle_pos])
+                        None
+                    }
                 } else {
-                    Some(if idx == 0 { len - 1 } else { idx - 1 })
+                    if idx > 0 {
+                        Some(idx - 1)
+                    } else {
+                        None
+                    }
                 }
             }
             None => Some(0),
@@ -1028,23 +1036,39 @@ impl MusicVisualizerApp {
         if index >= self.playlist.tracks.len() {
             return;
         }
-        
+
         self.playlist.current_index = Some(index);
         self.playlist.is_playing = true;
         self.demo_mode = false;
-        
+
+        // Get the track URL from pending_tracks or playlist (if available)
+        let track_url = {
+            // Try to get the URL from the file input (pending_tracks)
+            let pending = self.pending_tracks.borrow();
+            if let Some((_, _, url)) = pending.get(index) {
+                Some(url.clone())
+            } else {
+                None
+            }
+        };
+
+        // Update the audio element src if needed
         if let Some(ref audio) = *self.audio_element.borrow() {
-            audio.play().ok();
+            if let Some(url) = track_url {
+                audio.set_src(&url);
+            }
+            audio.set_current_time(0.0);
+            let _ = audio.play();
         }
     }
     
     fn toggle_playback(&mut self) {
         if let Some(ref audio) = *self.audio_element.borrow() {
             if self.playlist.is_playing {
-                audio.pause().ok();
+                let _ = audio.pause();
                 self.playlist.is_playing = false;
             } else {
-                audio.play().ok();
+                let _ = audio.play();
                 self.playlist.is_playing = true;
             }
         }
@@ -1062,25 +1086,33 @@ impl MusicVisualizerApp {
     fn play_next(&mut self) {
         if let Some(next_idx) = self.playlist.get_next_index() {
             self.play_track(next_idx);
+        } else {
+            // Si no hay siguiente, detener reproducción
+            self.stop_playback();
         }
     }
     
     fn play_previous(&mut self) {
-        // If more than 3 seconds into song, restart it
+        // Si han pasado más de 3 segundos, reinicia la canción actual
         if self.playlist.current_time > 3.0 {
             self.seek_to(0.0);
             return;
         }
-        
+
         if let Some(prev_idx) = self.playlist.get_prev_index() {
             self.play_track(prev_idx);
+        } else {
+            // Si no hay anterior, detener reproducción
+            self.stop_playback();
         }
     }
     
     fn seek_to(&mut self, time: f64) {
         if let Some(ref audio) = *self.audio_element.borrow() {
-            audio.set_current_time(time);
-            self.playlist.current_time = time;
+            let duration = audio.duration();
+            let seek_time = if !duration.is_nan() { time.min(duration) } else { time };
+            audio.set_current_time(seek_time);
+            self.playlist.current_time = seek_time;
         }
     }
     
