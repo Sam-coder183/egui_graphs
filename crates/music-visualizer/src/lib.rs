@@ -323,7 +323,7 @@ pub struct VisualizerConfig {
     pub accent_color: Color32,
     pub background_color: Color32,
     pub glow_intensity: f32,
-    pub particle_count: usize,
+    pub particle_count: u32,
 }
 
 impl Default for VisualizerConfig {
@@ -557,8 +557,8 @@ impl MusicVisualizerApp {
         }
         self.particles.retain(|p| p.is_alive());
         
-        // Limit particle count
-        while self.particles.len() > self.config.particle_count * 2 {
+        // Limit particle count (config.particle_count is u32 now)
+        while self.particles.len() > (self.config.particle_count as usize) * 2 {
             self.particles.remove(0);
         }
     }
@@ -948,36 +948,69 @@ impl MusicVisualizerApp {
             
             ui.separator();
             
-            // Fractal settings
+            // Fractal settings (now accepts arbitrary numbers via DragValue)
             ui.collapsing("🌿 Fractal Settings", |ui| {
-                ui.add(egui::Slider::new(&mut self.config.base_zoom, 0.1..=0.5).text("Zoom"));
-                ui.add(egui::Slider::new(&mut self.config.base_width, 0.5..=2.0).text("Width"));
-                ui.add(egui::Slider::new(&mut self.config.base_depth, 3..=12).text("Depth"));
-                ui.add(egui::Slider::new(&mut self.config.base_brightness, 0.3..=1.0).text("Brightness"));
+                ui.horizontal(|ui| {
+                    ui.label("Zoom:");
+                    ui.add(egui::DragValue::new(&mut self.config.base_zoom).speed(0.01));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Width:");
+                    ui.add(egui::DragValue::new(&mut self.config.base_width).speed(0.01));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Depth:");
+                    ui.add(egui::DragValue::new(&mut self.config.base_depth).speed(1.0));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Brightness:");
+                    ui.add(egui::DragValue::new(&mut self.config.base_brightness).speed(0.01));
+                });
             });
             
-            // Audio reactivity
+            // Audio reactivity (accept arbitrary multipliers)
             ui.collapsing("🎛️ Audio Reactivity", |ui| {
-                ui.add(egui::Slider::new(&mut self.config.zoom_bass_mult, 0.0..=1.0).text("Bass → Zoom"));
-                ui.add(egui::Slider::new(&mut self.config.width_bass_mult, 0.0..=1.0).text("Bass → Width"));
-                ui.add(egui::Slider::new(&mut self.config.depth_complexity_mult, 0.0..=8.0).text("Complexity → Depth"));
-                ui.add(egui::Slider::new(&mut self.config.brightness_treble_mult, 0.0..=1.0).text("Treble → Brightness"));
+                ui.horizontal(|ui| {
+                    ui.label("Bass → Zoom:");
+                    ui.add(egui::DragValue::new(&mut self.config.zoom_bass_mult).speed(0.01));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Bass → Width:");
+                    ui.add(egui::DragValue::new(&mut self.config.width_bass_mult).speed(0.01));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Complexity → Depth:");
+                    ui.add(egui::DragValue::new(&mut self.config.depth_complexity_mult).speed(0.1));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Treble → Brightness:");
+                    ui.add(egui::DragValue::new(&mut self.config.brightness_treble_mult).speed(0.01));
+                });
             });
             
-            // Animation
+            // Animation (now accepts arbitrary speeds/values)
             ui.collapsing("✨ Animation", |ui| {
                 ui.checkbox(&mut self.config.auto_rotate, "Auto Rotate");
-                ui.add(egui::Slider::new(&mut self.config.rotation_speed, 0.0..=2.0).text("Rotation Speed"));
+                ui.horizontal(|ui| {
+                    ui.label("Rotation Speed:");
+                    ui.add(egui::DragValue::new(&mut self.config.rotation_speed).speed(0.01));
+                });
                 ui.checkbox(&mut self.config.pulse_on_beat, "Pulse on Beat");
                 ui.checkbox(&mut self.config.color_cycle, "Color Cycle");
-                ui.add(egui::Slider::new(&mut self.config.color_cycle_speed, 0.01..=0.5).text("Color Speed"));
+                ui.horizontal(|ui| {
+                    ui.label("Color Speed:");
+                    ui.add(egui::DragValue::new(&mut self.config.color_cycle_speed).speed(0.01));
+                });
             });
             
             // Display options
             ui.collapsing("🖥️ Display", |ui| {
                 ui.checkbox(&mut self.show_spectrum, "Show Spectrum");
                 ui.checkbox(&mut self.show_waveform, "Show Waveform");
-                ui.add(egui::Slider::new(&mut self.config.glow_intensity, 0.0..=1.0).text("Glow"));
+                ui.horizontal(|ui| {
+                    ui.label("Glow:");
+                    ui.add(egui::DragValue::new(&mut self.config.glow_intensity).speed(0.01));
+                });
             });
             
             ui.separator();
