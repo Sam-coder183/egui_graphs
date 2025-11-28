@@ -1,9 +1,14 @@
-use eframe::egui::{self, Color32, Pos2, Rect, Stroke, Vec2};
+use eframe::egui::{self, Color32, Pos2, Rect, Vec2};
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
+mod audio;
+mod ui;
+mod unknown_pleasures;
+use crate::audio::{AudioAnalysis, WebAudio, init_web_audio};
+use crate::unknown_pleasures::UnknownPleasuresVisualizer;
 
 // Playlist track information
 #[derive(Clone, Default)]
@@ -119,181 +124,7 @@ impl PlaylistState {
     }
 }
 
-// Audio analysis data extracted from Web Audio API
-#[derive(Clone, Default)]
-pub struct AudioAnalysis {
-    // Frequency bands (normalized 0.0-1.0)
-    pub bass: f32,         // 20-250 Hz
-    pub low_mid: f32,      // 250-500 Hz
-    pub mid: f32,          // 500-2000 Hz
-    pub high_mid: f32,     // 2000-4000 Hz
-    pub treble: f32,       // 4000-20000 Hz
-    
-    // Overall metrics
-    pub volume: f32,       // RMS volume
-    pub peak: f32,         // Peak amplitude
-    
-    // Beat detection
-    pub beat: bool,        // True when beat detected
-    pub beat_intensity: f32,
-    
-    // Spectral features
-    pub spectral_centroid: f32,
-    pub spectral_flux: f32,
-    
-    // Smoothed values for animation
-    pub smooth_bass: f32,
-    pub smooth_mid: f32,
-    pub smooth_treble: f32,
-    pub smooth_volume: f32,
-    
-    // Raw frequency data
-    pub frequency_data: Vec<u8>,
-    pub time_data: Vec<u8>,
-}
-
-impl AudioAnalysis {
-    pub fn new() -> Self {
-        Self {
-            frequency_data: vec![0u8; 256],
-            time_data: vec![0u8; 256],
-            ..Default::default()
-        }
-    }
-    
-    pub fn update_from_fft(&mut self, frequency_data: &[u8], time_data: &[u8]) {
-        self.frequency_data = frequency_data.to_vec();
-        self.time_data = time_data.to_vec();
-        
-        let len = frequency_data.len();
-        if len == 0 {
-            return;
-        }
-        
-        // Calculate frequency bands
-        let bass_range = 0..len / 16;
-        let low_mid_range = len / 16..len / 8;
-        let mid_range = len / 8..len / 4;
-        let high_mid_range = len / 4..len / 2;
-        let treble_range = len / 2..len;
-        
-        let calc_band_avg = |range: std::ops::Range<usize>| -> f32 {
-            if range.is_empty() {
-                return 0.0;
-            }
-            let sum: u32 = frequency_data[range.clone()].iter().map(|&x| x as u32).sum();
-            (sum as f32) / (range.len() as f32 * 255.0)
-        };
-        
-        let new_bass = calc_band_avg(bass_range);
-        let new_low_mid = calc_band_avg(low_mid_range);
-        let new_mid = calc_band_avg(mid_range);
-        let new_high_mid = calc_band_avg(high_mid_range);
-        let new_treble = calc_band_avg(treble_range);
-        
-        // Calculate volume (RMS)
-        let rms: f32 = (time_data.iter()
-            .map(|&x| {
-                let centered = (x as f32) - 128.0;
-                centered * centered
-            })
-            .sum::<f32>() / time_data.len() as f32)
-            .sqrt() / 128.0;
-        
-        // Peak detection
-        let peak = time_data.iter()
-            .map(|&x| ((x as f32) - 128.0).abs())
-            .max_by(|a, b| a.partial_cmp(b).unwrap())
-            .unwrap_or(0.0) / 128.0;
-        
-        // Beat detection (energy spike in bass)
-        let bass_threshold = 0.6;
-        let energy_jump = new_bass - self.smooth_bass;
-        self.beat = energy_jump > 0.1 && new_bass > bass_threshold;
-        self.beat_intensity = if self.beat { energy_jump.min(1.0) } else { 0.0 };
-        
-        // Spectral centroid (brightness)
-        let total_energy: f32 = frequency_data.iter().map(|&x| x as f32).sum();
-        if total_energy > 0.0 {
-            let weighted_sum: f32 = frequency_data.iter()
-                .enumerate()
-                .map(|(i, &x)| (i as f32) * (x as f32))
-                .sum();
-            self.spectral_centroid = weighted_sum / total_energy / len as f32;
-        }
-        
-        // Spectral flux (change in spectrum)
-        let flux: f32 = frequency_data.iter()
-            .zip(self.frequency_data.iter())
-            .map(|(&new, &old)| {
-                let diff = (new as f32) - (old as f32);
-                if diff > 0.0 { diff } else { 0.0 }
-            })
-            .sum::<f32>() / (len as f32 * 255.0);
-        self.spectral_flux = flux;
-        
-        // Smooth transitions
-        let smoothing = 0.15;
-        self.smooth_bass = self.smooth_bass + (new_bass - self.smooth_bass) * smoothing;
-        self.smooth_mid = self.smooth_mid + (new_mid - self.smooth_mid) * smoothing;
-        self.smooth_treble = self.smooth_treble + (new_treble - self.smooth_treble) * smoothing;
-        self.smooth_volume = self.smooth_volume + (rms - self.smooth_volume) * smoothing;
-        
-        // Update raw values
-        self.bass = new_bass;
-        self.low_mid = new_low_mid;
-        self.mid = new_mid;
-        self.high_mid = new_high_mid;
-        self.treble = new_treble;
-        self.volume = rms;
-        self.peak = peak;
-    }
-    
-    // Demo mode with simulated audio
-    pub fn simulate_demo(&mut self, time: f64) {
-        // Simulate bass beat
-        let beat_freq = 2.0; // BPM / 60
-        let beat_phase = (time * beat_freq * std::f64::consts::TAU).sin();
-        let beat_envelope = ((beat_phase + 1.0) / 2.0).powf(4.0) as f32;
-        
-        self.bass = 0.3 + beat_envelope * 0.5;
-        self.low_mid = 0.25 + (time * 1.5).sin() as f32 * 0.15;
-        self.mid = 0.3 + (time * 2.3).sin() as f32 * 0.2;
-        self.high_mid = 0.2 + (time * 3.7).sin() as f32 * 0.15;
-        self.treble = 0.15 + (time * 5.1).sin() as f32 * 0.1;
-        
-        self.volume = 0.4 + beat_envelope * 0.3;
-        self.peak = self.volume * 1.2;
-        
-        self.beat = beat_envelope > 0.8;
-        self.beat_intensity = if self.beat { beat_envelope } else { 0.0 };
-        
-        self.spectral_centroid = 0.5 + (time * 0.5).sin() as f32 * 0.3;
-        self.spectral_flux = beat_envelope * 0.5;
-        
-        // Smooth values
-        let smoothing = 0.1;
-        self.smooth_bass = self.smooth_bass + (self.bass - self.smooth_bass) * smoothing;
-        self.smooth_mid = self.smooth_mid + (self.mid - self.smooth_mid) * smoothing;
-        self.smooth_treble = self.smooth_treble + (self.treble - self.smooth_treble) * smoothing;
-        self.smooth_volume = self.smooth_volume + (self.volume - self.smooth_volume) * smoothing;
-        
-        // Generate demo frequency/time data
-        for i in 0..self.frequency_data.len() {
-            let freq_norm = i as f64 / self.frequency_data.len() as f64;
-            let value = ((1.0 - freq_norm).powf(2.0) * self.bass as f64 * 200.0
-                + (time * (10.0 + i as f64 * 0.5)).sin().abs() * 50.0) as u8;
-            self.frequency_data[i] = value;
-        }
-        
-        for i in 0..self.time_data.len() {
-            let t = i as f64 / self.time_data.len() as f64;
-            let wave = (t * std::f64::consts::TAU * 4.0 + time * 10.0).sin();
-            let value = 128.0 + wave * 64.0 * self.volume as f64;
-            self.time_data[i] = value.clamp(0.0, 255.0) as u8;
-        }
-    }
-}
+// Audio logic moved to `src/audio.rs`.
 
 // Configuration for visualizer
 #[derive(Clone)]
@@ -324,6 +155,24 @@ pub struct VisualizerConfig {
     pub background_color: Color32,
     pub glow_intensity: f32,
     pub particle_count: u32,
+    // Unknown Pleasures visualizer parameters
+    pub up_line_thickness: f32,
+    pub up_perspective: f32,
+    pub up_vertical_scale: f32,
+    pub up_line_length: f32,
+    pub up_zoom: f32,
+    pub up_isometric_rotate: bool,
+    pub up_rotation_deg: f32,
+    // Audio reactivity multipliers for Unknown Pleasures
+    pub up_bass_mult: f32,
+    pub up_mid_mult: f32,
+    pub up_treble_mult: f32,
+    // Additional Unknown Pleasures controls
+    pub up_max_lines: u32,
+    pub up_samples: u32,
+    pub up_freq_curve_exponent: f32,
+    pub up_monochrome: bool,
+    pub up_smoothing: f32,
 }
 
 impl Default for VisualizerConfig {
@@ -351,7 +200,66 @@ impl Default for VisualizerConfig {
             background_color: Color32::from_rgb(10, 10, 20),
             glow_intensity: 0.5,
             particle_count: 50,
+            up_line_thickness: 1.5,
+            up_perspective: 0.6,
+            up_vertical_scale: 1.0,
+            up_line_length: 1.0,
+            up_zoom: 1.0,
+            up_isometric_rotate: false,
+            up_rotation_deg: 15.0,
+            up_bass_mult: 1.2,
+            up_mid_mult: 0.6,
+            up_treble_mult: 0.2,
+            up_max_lines: 80,
+            up_samples: 120,
+            up_freq_curve_exponent: 2.5,
+            up_monochrome: true,
+            up_smoothing: 0.15,
         }
+        }
+    }
+
+    impl VisualizerConfig {
+        /// Preset tuned to mimic the classic 'Unknown Pleasures' look (monochrome stacked spectra)
+        pub fn preset_unknown_pleasures_image() -> Self {
+            let mut c = Self::default();
+            // Strong monochrome contrast
+            c.base_color = Color32::WHITE;
+            c.background_color = Color32::from_rgb(6, 6, 10);
+            c.accent_color = Color32::from_rgb(200, 200, 200);
+
+            // Unknown Pleasures tuned params
+            c.up_monochrome = true;
+            c.up_line_thickness = 2.0;
+            c.up_perspective = 0.75;
+            c.up_vertical_scale = 1.6;
+            c.up_line_length = 1.5;
+            c.up_zoom = 1.05;
+            c.up_rotation_deg = 12.0;
+            c.up_max_lines = 80;
+            c.up_samples = 180;
+            c.up_freq_curve_exponent = 3.2;
+            c.up_smoothing = 0.22;
+
+            // Reduce other visual distractions
+            c.pulse_on_beat = false;
+            c.color_cycle = false;
+            c
+        }
+
+        /// Reset only the fractal-related parameters to their default values
+        pub fn reset_fractal_to_default(&mut self) {
+        let d = VisualizerConfig::default();
+        self.base_zoom = d.base_zoom;
+        self.base_width = d.base_width;
+        self.base_depth = d.base_depth;
+        self.base_brightness = d.base_brightness;
+
+        self.zoom_bass_mult = d.zoom_bass_mult;
+        self.width_bass_mult = d.width_bass_mult;
+        self.depth_complexity_mult = d.depth_complexity_mult;
+        self.brightness_treble_mult = d.brightness_treble_mult;
+        self.rotation_beat_mult = d.rotation_beat_mult;
     }
 }
 
@@ -407,24 +315,15 @@ fn rand_float() -> f32 {
     })
 }
 
-// Web Audio wrapper (placeholder for future expansion)
-#[allow(dead_code)]
-#[derive(Clone)]
-struct WebAudio {
-    initialized: bool,
-    error_message: Option<String>,
-}
-
-impl Default for WebAudio {
-    fn default() -> Self {
-        Self {
-            initialized: false,
-            error_message: None,
-        }
-    }
-}
+// Web audio types and initialization moved to `src/audio.rs`.
 
 // Main visualizer app
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum VisualizerMode {
+    Fractal,
+    UnknownPleasures,
+}
+
 pub struct MusicVisualizerApp {
     audio: AudioAnalysis,
     config: VisualizerConfig,
@@ -454,6 +353,12 @@ pub struct MusicVisualizerApp {
     show_waveform: bool,
     show_settings: bool,
     beat_flash: f32,
+    // Option: when switching back to Fractal, reset fractal params to defaults
+    restore_fractal_on_back: bool,
+    // Current visualizer mode
+    visualizer_mode: VisualizerMode,
+    // Unknown Pleasures visualizer instance
+    unknown_visualizer: UnknownPleasuresVisualizer,
 }
 
 impl Default for MusicVisualizerApp {
@@ -478,6 +383,9 @@ impl Default for MusicVisualizerApp {
             show_waveform: true,
             show_settings: true,
             beat_flash: 0.0,
+            restore_fractal_on_back: false,
+            visualizer_mode: VisualizerMode::Fractal,
+            unknown_visualizer: UnknownPleasuresVisualizer::new(),
         }
     }
 }
@@ -540,8 +448,8 @@ impl MusicVisualizerApp {
             self.rotation += (self.config.rotation_speed + beat_boost) * dt;
         }
         
-        // Spawn particles on beat
-        if self.audio.beat && self.config.pulse_on_beat {
+        // Spawn particles on beat (disabled for Unknown Pleasures mode)
+        if self.audio.beat && self.config.pulse_on_beat && self.visualizer_mode != VisualizerMode::UnknownPleasures {
             let center = Pos2::new(400.0, 300.0); // Will be updated in render
             let color = self.get_current_color();
             for _ in 0..5 {
@@ -563,188 +471,75 @@ impl MusicVisualizerApp {
         }
     }
     
-    fn get_current_color(&self) -> Color32 {
-        if self.config.color_cycle {
-            let hue = (self.time as f32 * self.config.color_cycle_speed) % 1.0;
-            hsl_to_rgb(hue, 0.8, 0.6)
-        } else {
-            self.config.base_color
-        }
-    }
+    // get_current_color is provided by the UI module (impl in src/ui.rs)
     
-    fn draw_fractal(&self, ui: &mut egui::Ui, rect: Rect) {
-        let painter = ui.painter();
-        let center = rect.center();
-        
-        // Calculate reactive parameters
-        let zoom = self.config.base_zoom + self.audio.smooth_bass * self.config.zoom_bass_mult;
-        let width = self.config.base_width + self.audio.smooth_bass * self.config.width_bass_mult;
-        let depth = (self.config.base_depth as f32 
-            + self.audio.spectral_centroid * self.config.depth_complexity_mult) as u32;
-        let brightness = self.config.base_brightness 
-            + self.audio.smooth_treble * self.config.brightness_treble_mult;
-        
-        // Draw background with beat flash
-        let bg_intensity = (self.beat_flash * 30.0) as u8;
-        let bg = Color32::from_rgb(
-            self.config.background_color.r().saturating_add(bg_intensity),
-            self.config.background_color.g().saturating_add(bg_intensity / 2),
-            self.config.background_color.b().saturating_add(bg_intensity),
-        );
-        painter.rect_filled(rect, 0.0, bg);
-        
-        // Clip drawing to rect
-        let clip_rect = rect;
-        
-        // Calculate base length to fit within the rect (use smaller dimension)
-        let max_size = rect.width().min(rect.height()) * 0.35;
-        let base_length = max_size * zoom;
-        let branch_angle = std::f32::consts::PI / 4.0 * width;
-        let color = self.get_current_color();
-        
-        // Draw glow effect at center first (behind fractal)
-        if self.config.glow_intensity > 0.0 {
-            let glow_color = Color32::from_rgba_unmultiplied(
-                color.r(),
-                color.g(),
-                color.b(),
-                (self.config.glow_intensity * self.audio.smooth_volume * 100.0) as u8,
-            );
-            let glow_radius = (base_length * 0.5 * (1.0 + self.audio.smooth_bass)).min(max_size * 0.6);
-            painter.circle_filled(center, glow_radius, glow_color);
-        }
-        
-        // Draw fractal tree starting from center, growing upward
-        self.draw_branch(
-            painter,
-            center,
-            base_length,
-            -std::f32::consts::PI / 2.0 + self.rotation * 0.1,
-            branch_angle,
-            depth,
-            brightness,
-            color,
-            clip_rect,
-        );
-    }
-    
-    fn draw_branch(
-        &self,
-        painter: &egui::Painter,
-        start: Pos2,
-        length: f32,
-        angle: f32,
-        branch_angle: f32,
-        depth: u32,
-        brightness: f32,
-        color: Color32,
-        clip_rect: Rect,
-    ) {
-        if depth == 0 || length < 2.0 {
-            return;
-        }
-        
-        let end = Pos2::new(
-            start.x + angle.cos() * length,
-            start.y + angle.sin() * length,
-        );
-        
-        // Skip if both points are outside the clip rect
-        if !clip_rect.contains(start) && !clip_rect.contains(end) {
-            // Check if line might still cross the rect
-            let line_rect = Rect::from_two_pos(start, end);
-            if !line_rect.intersects(clip_rect) {
-                return;
-            }
-        }
-        
-        // Vary color based on depth
-        let depth_factor = depth as f32 / self.config.base_depth as f32;
-        let line_color = Color32::from_rgba_unmultiplied(
-            (color.r() as f32 * brightness * depth_factor) as u8,
-            (color.g() as f32 * brightness * depth_factor) as u8,
-            (color.b() as f32 * brightness * depth_factor) as u8,
-            (255.0 * depth_factor) as u8,
-        );
-        
-        let stroke_width = (depth as f32 * 0.1).max(0.5);
-        painter.line_segment([start, end], Stroke::new(stroke_width, line_color));
-        
-        // Audio-reactive branch angles
-        let angle_mod = self.audio.smooth_mid * 0.2;
-        
-        // Recursive branches
-        let new_length = length * (0.65 + self.audio.smooth_treble * 0.1);
-        
-        self.draw_branch(painter, end, new_length, angle - branch_angle + angle_mod, 
-            branch_angle * 0.95, depth - 1, brightness, color, clip_rect);
-        self.draw_branch(painter, end, new_length, angle + branch_angle - angle_mod, 
-            branch_angle * 0.95, depth - 1, brightness, color, clip_rect);
-    }
-    
-    fn draw_spectrum(&self, ui: &mut egui::Ui, rect: Rect) {
-        let painter = ui.painter();
-        let bar_count = 64;
-        let bar_width = rect.width() / bar_count as f32;
-        
-        for i in 0..bar_count {
-            let idx = i * self.audio.frequency_data.len() / bar_count;
-            let value = if idx < self.audio.frequency_data.len() {
-                self.audio.frequency_data[idx] as f32 / 255.0
-            } else {
-                0.0
-            };
-            
-            let height = value * rect.height();
-            let x = rect.left() + i as f32 * bar_width;
-            let bar_rect = Rect::from_min_max(
-                Pos2::new(x, rect.bottom() - height),
-                Pos2::new(x + bar_width - 1.0, rect.bottom()),
-            );
-            
-            let hue = i as f32 / bar_count as f32;
-            let color = hsl_to_rgb(hue, 0.8, 0.5);
-            painter.rect_filled(bar_rect, 0.0, color);
-        }
-    }
-    
-    fn draw_waveform(&self, ui: &mut egui::Ui, rect: Rect) {
-        let painter = ui.painter();
-        
-        let points: Vec<Pos2> = self.audio.time_data.iter()
-            .enumerate()
-            .map(|(i, &v)| {
-                let x = rect.left() + (i as f32 / self.audio.time_data.len() as f32) * rect.width();
-                let y = rect.center().y + ((v as f32 - 128.0) / 128.0) * rect.height() * 0.5;
-                Pos2::new(x, y)
-            })
-            .collect();
-        
-        if points.len() > 1 {
-            for i in 0..points.len() - 1 {
-                let hue = i as f32 / points.len() as f32;
-                let color = hsl_to_rgb(hue, 0.7, 0.6);
-                painter.line_segment([points[i], points[i + 1]], Stroke::new(2.0, color));
-            }
-        }
-    }
-    
-    fn draw_particles(&mut self, painter: &egui::Painter, center: Pos2) {
-        for p in &mut self.particles {
-            let alpha = (p.life * 255.0) as u8;
-            let color = Color32::from_rgba_unmultiplied(p.color.r(), p.color.g(), p.color.b(), alpha);
-            let pos = Pos2::new(
-                center.x + (p.pos.x - 400.0),
-                center.y + (p.pos.y - 300.0),
-            );
-            painter.circle_filled(pos, p.size * p.life, color);
-        }
-    }
+    // UI drawing implementations moved to `src/ui.rs`.
     
     fn draw_settings_panel(&mut self, ui: &mut egui::Ui) {
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.heading("🎵 Music Visualizer");
             ui.separator();
+
+            // Visualizer mode selector (list-style)
+            ui.collapsing("🎚️ Visualizer Mode", |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label("Mode:");
+                        if ui.selectable_label(self.visualizer_mode == VisualizerMode::Fractal, "Fractal").clicked() {
+                            let prev = self.visualizer_mode;
+                            self.visualizer_mode = VisualizerMode::Fractal;
+                            if prev == VisualizerMode::UnknownPleasures && self.restore_fractal_on_back {
+                                self.config.reset_fractal_to_default();
+                            }
+                        }
+                        if ui.selectable_label(self.visualizer_mode == VisualizerMode::UnknownPleasures, "Unknown Pleasures").clicked() {
+                            self.visualizer_mode = VisualizerMode::UnknownPleasures;
+                        }
+                    });
+
+                // If Unknown Pleasures is selected, show mode-specific params
+                if self.visualizer_mode == VisualizerMode::UnknownPleasures {
+                    ui.add_space(4.0);
+                    ui.label("Unknown Pleasures Settings:");
+                    ui.horizontal(|ui| {
+                        ui.label("Line thickness:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_line_thickness).speed(0.1));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Perspective:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_perspective).speed(0.05));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Vertical scale:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_vertical_scale).speed(0.1));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Max lines:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_max_lines).speed(1.0));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Samples per line:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_samples).speed(1.0));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Freq curve exp:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_freq_curve_exponent).speed(0.1));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Smoothing:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_smoothing).speed(0.01));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Color mode:");
+                        if ui.checkbox(&mut self.config.up_monochrome, "Monochrome").changed() {
+                            // toggle
+                        }
+                    });
+                    ui.add_space(4.0);
+                    if ui.button("Apply 'Image' Preset").clicked() {
+                        self.config = VisualizerConfig::preset_unknown_pleasures_image();
+                    }
+                }
+            });
             
             // ===== PLAYLIST SECTION =====
             ui.collapsing("🎶 Playlist", |ui| {
@@ -785,8 +580,8 @@ impl MusicVisualizerApp {
                                     .desired_width(ui.available_width() - 50.0)
                             );
                             
-                            // Click on progress bar to seek
-                            if progress_response.clicked() {
+                            // Click or drag on progress bar to seek
+                            if progress_response.clicked() || progress_response.dragged() {
                                 if let Some(pos) = progress_response.interact_pointer_pos() {
                                     let rect = progress_response.rect;
                                     let seek_ratio = (pos.x - rect.left()) / rect.width();
@@ -950,42 +745,92 @@ impl MusicVisualizerApp {
             
             // Fractal settings (now accepts arbitrary numbers via DragValue)
             ui.collapsing("🌿 Fractal Settings", |ui| {
-                ui.horizontal(|ui| {
-                    ui.label("Zoom:");
-                    ui.add(egui::DragValue::new(&mut self.config.base_zoom).speed(0.01));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Width:");
-                    ui.add(egui::DragValue::new(&mut self.config.base_width).speed(0.01));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Depth:");
-                    ui.add(egui::DragValue::new(&mut self.config.base_depth).speed(1.0));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Brightness:");
-                    ui.add(egui::DragValue::new(&mut self.config.base_brightness).speed(0.01));
-                });
+                if self.visualizer_mode == VisualizerMode::UnknownPleasures {
+                    ui.label("Unknown Pleasures Visualizer Controls:");
+                    ui.horizontal(|ui| {
+                        ui.label("Zoom:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_zoom).speed(0.01));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Isometric rotate:");
+                        ui.checkbox(&mut self.config.up_isometric_rotate, "Enable");
+                        ui.label("Angle:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_rotation_deg).speed(1.0));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Line thickness:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_line_thickness).speed(0.1));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Line length:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_line_length).speed(0.05));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Perspective:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_perspective).speed(0.05));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Vertical scale:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_vertical_scale).speed(0.1));
+                    });
+                } else {
+                    ui.horizontal(|ui| {
+                        ui.label("Zoom:");
+                        ui.add(egui::DragValue::new(&mut self.config.base_zoom).speed(0.01));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Width:");
+                        ui.add(egui::DragValue::new(&mut self.config.base_width).speed(0.01));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Depth:");
+                        ui.add(egui::DragValue::new(&mut self.config.base_depth).speed(1.0));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Brightness:");
+                        ui.add(egui::DragValue::new(&mut self.config.base_brightness).speed(0.01));
+                    });
+
+                    ui.add_space(4.0);
+                    ui.horizontal(|ui| {
+                        ui.checkbox(&mut self.restore_fractal_on_back, "Reset fractal to defaults when switching back");
+                    });
+                }
             });
             
             // Audio reactivity (accept arbitrary multipliers)
             ui.collapsing("🎛️ Audio Reactivity", |ui| {
-                ui.horizontal(|ui| {
-                    ui.label("Bass → Zoom:");
-                    ui.add(egui::DragValue::new(&mut self.config.zoom_bass_mult).speed(0.01));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Bass → Width:");
-                    ui.add(egui::DragValue::new(&mut self.config.width_bass_mult).speed(0.01));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Complexity → Depth:");
-                    ui.add(egui::DragValue::new(&mut self.config.depth_complexity_mult).speed(0.1));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Treble → Brightness:");
-                    ui.add(egui::DragValue::new(&mut self.config.brightness_treble_mult).speed(0.01));
-                });
+                if self.visualizer_mode == VisualizerMode::UnknownPleasures {
+                    ui.horizontal(|ui| {
+                        ui.label("Bass influence:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_bass_mult).speed(0.01));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Mid influence:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_mid_mult).speed(0.01));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Treble influence:");
+                        ui.add(egui::DragValue::new(&mut self.config.up_treble_mult).speed(0.01));
+                    });
+                } else {
+                    ui.horizontal(|ui| {
+                        ui.label("Bass → Zoom:");
+                        ui.add(egui::DragValue::new(&mut self.config.zoom_bass_mult).speed(0.01));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Bass → Width:");
+                        ui.add(egui::DragValue::new(&mut self.config.width_bass_mult).speed(0.01));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Complexity → Depth:");
+                        ui.add(egui::DragValue::new(&mut self.config.depth_complexity_mult).speed(0.1));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Treble → Brightness:");
+                        ui.add(egui::DragValue::new(&mut self.config.brightness_treble_mult).speed(0.01));
+                    });
+                }
             });
             
             // Animation (now accepts arbitrary speeds/values)
@@ -1346,12 +1191,18 @@ impl eframe::App for MusicVisualizerApp {
                 Pos2::new(remaining.max.x, remaining.max.y - bottom_ui_height),
             );
             
-            // Draw fractal
+            // Draw appropriate visualizer for selected mode
             let fractal_response = ui.allocate_rect(fractal_rect, egui::Sense::hover());
             if fractal_response.hovered() {
                 // Could add mouse interaction here
             }
-            self.draw_fractal(ui, fractal_rect);
+            match self.visualizer_mode {
+                VisualizerMode::Fractal => self.draw_fractal(ui, fractal_rect),
+                VisualizerMode::UnknownPleasures => {
+                    // Delegate drawing to the Unknown Pleasures visualizer (mutable)
+                    self.unknown_visualizer.draw(ui, fractal_rect, &self.audio, &self.config, self.time);
+                }
+            }
             
             // Draw particles
             let painter = ui.painter();
@@ -1380,83 +1231,9 @@ impl eframe::App for MusicVisualizerApp {
     }
 }
 
-// HSL to RGB color conversion
-fn hsl_to_rgb(h: f32, s: f32, l: f32) -> Color32 {
-    let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
-    let x = c * (1.0 - ((h * 6.0) % 2.0 - 1.0).abs());
-    let m = l - c / 2.0;
-    
-    let (r, g, b) = match (h * 6.0) as u32 {
-        0 => (c, x, 0.0),
-        1 => (x, c, 0.0),
-        2 => (0.0, c, x),
-        3 => (0.0, x, c),
-        4 => (x, 0.0, c),
-        _ => (c, 0.0, x),
-    };
-    
-    Color32::from_rgb(
-        ((r + m) * 255.0) as u8,
-        ((g + m) * 255.0) as u8,
-        ((b + m) * 255.0) as u8,
-    )
-}
+// HSL helper moved to `src/ui.rs` (used by drawing helpers there).
 
-// Initialize Web Audio API
-async fn init_web_audio(audio_data: Rc<RefCell<(Vec<u8>, Vec<u8>)>>) -> Result<(), JsValue> {
-    let window = web_sys::window().ok_or("No window")?;
-    let navigator = window.navigator();
-    let media_devices = navigator.media_devices()?;
-    
-    // Request microphone access
-    let constraints = web_sys::MediaStreamConstraints::new();
-    constraints.set_audio(&JsValue::TRUE);
-    constraints.set_video(&JsValue::FALSE);
-    
-    let promise = media_devices.get_user_media_with_constraints(&constraints)?;
-    let stream: web_sys::MediaStream = wasm_bindgen_futures::JsFuture::from(promise).await?.into();
-    
-    // Create audio context and analyser
-    let audio_ctx = web_sys::AudioContext::new()?;
-    let analyser = audio_ctx.create_analyser()?;
-    analyser.set_fft_size(512);
-    analyser.set_smoothing_time_constant(0.8);
-    
-    let source = audio_ctx.create_media_stream_source(&stream)?;
-    source.connect_with_audio_node(&analyser)?;
-    
-    // Store analyser for later use (simplified - in production would use more robust pattern)
-    let freq_data_length = analyser.frequency_bin_count() as usize;
-    let time_data_length = analyser.fft_size() as usize;
-    
-    // Set up animation frame callback
-    let audio_data_clone = audio_data.clone();
-    let analyser_clone = analyser.clone();
-    
-    let callback = Closure::wrap(Box::new(move || {
-        let mut freq_data = vec![0u8; freq_data_length];
-        let mut time_data = vec![0u8; time_data_length];
-        
-        analyser_clone.get_byte_frequency_data(&mut freq_data);
-        analyser_clone.get_byte_time_domain_data(&mut time_data);
-        
-        *audio_data_clone.borrow_mut() = (freq_data, time_data);
-    }) as Box<dyn Fn()>);
-    
-    // Start polling audio data
-    let window_clone = window.clone();
-    fn request_frame(window: &web_sys::Window, callback: &Closure<dyn Fn()>) {
-        window.set_interval_with_callback_and_timeout_and_arguments_0(
-            callback.as_ref().unchecked_ref(),
-            16, // ~60fps
-        ).ok();
-    }
-    
-    request_frame(&window_clone, &callback);
-    callback.forget(); // Leak the closure to keep it alive
-    
-    Ok(())
-}
+// init_web_audio moved to src/audio.rs
 
 // WASM entry point
 #[wasm_bindgen(start)]
