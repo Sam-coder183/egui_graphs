@@ -16,6 +16,7 @@ pub struct PlaylistTrack {
     pub name: String,
     pub duration: f64,      // Duration in seconds
     pub file_type: String,  // mp3, wav, ogg, flac, etc.
+    pub url: String,        // Object URL or external URL
 }
 
 // Playlist and playback state
@@ -369,6 +370,10 @@ pub struct MusicVisualizerApp {
     unknown_visualizer: UnknownPleasuresVisualizer,
     // System audio mode
     system_audio_mode: Option<bool>,
+    // YouTube URL input buffer
+    youtube_url_input: String,
+    // YouTube error message
+    youtube_error: Rc<RefCell<Option<String>>>,
 }
 
 impl Default for MusicVisualizerApp {
@@ -397,6 +402,8 @@ impl Default for MusicVisualizerApp {
             visualizer_mode: VisualizerMode::Fractal,
             unknown_visualizer: UnknownPleasuresVisualizer::new(),
             system_audio_mode: Some(false),
+            youtube_url_input: String::new(),
+            youtube_error: Rc::new(RefCell::new(None)),
         }
     }
 }
@@ -573,32 +580,93 @@ impl MusicVisualizerApp {
                 ui.label("Supported: MP3, WAV, OGG, FLAC, AAC, M4A");
                 ui.add_space(4.0);
                 
+                // URL input (YouTube or direct audio link)
+                ui.horizontal(|ui| {
+                    ui.label("🔗");
+                    ui.add(
+                        egui::TextEdit::singleline(&mut self.youtube_url_input)
+                            .hint_text("Paste YouTube or audio URL…")
+                            .desired_width(ui.available_width() - 40.0),
+                    );
+                });
+                ui.horizontal(|ui| {
+                    if ui.button("▶ Play").clicked() && !self.youtube_url_input.trim().is_empty() {
+                        let url = self.youtube_url_input.clone();
+                        let is_youtube = url.contains("youtube.com") || url.contains("youtu.be");
+                        let (name, file_type) = if is_youtube {
+                            let name = if let Some(id) = extract_youtube_id(&url) {
+                                format!("YouTube - {}", id)
+                            } else {
+                                "YouTube".to_string()
+                            };
+                            (name, "youtube".to_string())
+                        } else {
+                            // Direct audio URL
+                            let name = url.split('/').last().unwrap_or("Audio").to_string();
+                            let ext = url.split('.').last().unwrap_or("mp3").to_lowercase();
+                            (name, ext)
+                        };
+                        
+                        self.playlist.tracks.push(PlaylistTrack {
+                            name,
+                            duration: 0.0,
+                            file_type,
+                            url,
+                        });
+                        let idx = self.playlist.tracks.len().saturating_sub(1);
+                        self.play_track(idx);
+                        self.youtube_url_input.clear();
+                    }
+                    if ui.button("➕ Queue").clicked() && !self.youtube_url_input.trim().is_empty() {
+                        let url = self.youtube_url_input.clone();
+                        let is_youtube = url.contains("youtube.com") || url.contains("youtu.be");
+                        let (name, file_type) = if is_youtube {
+                            let name = if let Some(id) = extract_youtube_id(&url) {
+                                format!("YouTube - {}", id)
+                            } else {
+                                "YouTube".to_string()
+                            };
+                            (name, "youtube".to_string())
+                        } else {
+                            let name = url.split('/').last().unwrap_or("Audio").to_string();
+                            let ext = url.split('.').last().unwrap_or("mp3").to_lowercase();
+                            (name, ext)
+                        };
+                        
+                        self.playlist.tracks.push(PlaylistTrack {
+                            name,
+                            duration: 0.0,
+                            file_type,
+                            url,
+                        });
+                        self.youtube_url_input.clear();
+                    }
+                });
+                ui.add_space(4.0);
+                
                 // Current track info and progress
                 if let Some(track) = self.playlist.get_current_track().cloned() {
                     ui.group(|ui| {
                         ui.label(format!("🎵 {}", track.name));
                         ui.label(format!("Format: {}", track.file_type.to_uppercase()));
                         
-                        // Progress bar
-                        let progress = self.playlist.get_progress();
+                        // Progress / seek
                         let current_time = PlaylistState::format_time(self.playlist.current_time);
                         let total_time = PlaylistState::format_time(self.playlist.duration);
                         
                         ui.horizontal(|ui| {
                             ui.label(&current_time);
-                            let progress_response = ui.add(
-                                egui::ProgressBar::new(progress)
-                                    .desired_width(ui.available_width() - 50.0)
-                            );
                             
-                            // Click or drag on progress bar to seek
-                            if progress_response.clicked() || progress_response.dragged() {
-                                if let Some(pos) = progress_response.interact_pointer_pos() {
-                                    let rect = progress_response.rect;
-                                    let seek_ratio = (pos.x - rect.left()) / rect.width();
-                                    let seek_time = seek_ratio as f64 * self.playlist.duration;
-                                    self.seek_to(seek_time);
-                                }
+                            // Interactive progress slider
+                            let duration = self.playlist.duration.max(1.0); // avoid divide by zero
+                            let mut time = self.playlist.current_time;
+                            let slider_response = ui.add(
+                                egui::Slider::new(&mut time, 0.0..=duration)
+                                    .show_value(false)
+                                    .trailing_fill(true)
+                            );
+                            if slider_response.changed() || slider_response.drag_stopped() {
+                                self.seek_to(time);
                             }
                             
                             ui.label(&total_time);
@@ -636,6 +704,12 @@ impl MusicVisualizerApp {
                             }
                         });
                     });
+                    
+                    // Show YouTube info/error if any
+                    if let Some(err) = self.youtube_error.borrow().as_ref() {
+                        ui.colored_label(Color32::from_rgb(255, 100, 100), format!("⚠ {}", err));
+                        ui.label("Try pasting a direct audio URL instead.");
+                    }
                 } else {
                     ui.colored_label(Color32::GRAY, "No track selected");
                 }
@@ -728,23 +802,6 @@ impl MusicVisualizerApp {
                     self.try_init_system_audio();
                 }
             });
-        }
-
-        // Helper methods for system audio
-        fn is_system_audio(&self) -> bool {
-            // Add a field to track system audio mode
-            self.system_audio_mode.unwrap_or(false)
-        }
-
-        fn set_system_audio(&mut self, enabled: bool) {
-            self.system_audio_mode = Some(enabled);
-        }
-
-        fn try_init_system_audio(&mut self) {
-            // Placeholder: actual implementation depends on browser support
-            // For now, show a warning
-            web_sys::console::log_1(&"System audio capture requested (not implemented)".into());
-        }
             
             if !self.demo_mode && !*self.audio_initialized.borrow() {
                 ui.colored_label(Color32::YELLOW, "⏳ Initializing microphone...");
@@ -901,17 +958,32 @@ impl MusicVisualizerApp {
         });
     }
     
+    // Helper methods for system audio
+    fn is_system_audio(&self) -> bool {
+        self.system_audio_mode.unwrap_or(false)
+    }
+
+    fn set_system_audio(&mut self, enabled: bool) {
+        self.system_audio_mode = Some(enabled);
+    }
+
+    fn try_init_system_audio(&mut self) {
+        // Placeholder: actual implementation depends on browser support
+        web_sys::console::log_1(&"System audio capture requested (not implemented)".into());
+    }
+    
     // ===== PLAYLIST METHODS =====
     
     fn process_pending_tracks(&mut self) {
         // Process any tracks added from file input
         let pending = self.pending_tracks.borrow().clone();
         if !pending.is_empty() {
-            for (name, file_type, _url) in pending {
+            for (name, file_type, url) in pending {
                 self.playlist.tracks.push(PlaylistTrack {
                     name,
                     duration: 0.0, // Will be updated when metadata loads
                     file_type,
+                    url,
                 });
             }
             self.pending_tracks.borrow_mut().clear();
@@ -1065,26 +1137,155 @@ impl MusicVisualizerApp {
 
         self.playlist.current_index = Some(index);
         self.playlist.is_playing = true;
-        self.demo_mode = false;
 
-        // Get the track URL from pending_tracks or playlist (if available)
-        let track_url = {
-            // Try to get the URL from the file input (pending_tracks)
-            let pending = self.pending_tracks.borrow();
-            if let Some((_, _, url)) = pending.get(index) {
-                Some(url.clone())
+        // Get the URL from the playlist entry
+        let track = self.playlist.tracks[index].clone();
+
+        if track.file_type == "youtube" {
+            // YouTube: show embedded player, use demo mode for visualization
+            self.demo_mode = true; // Visualization will use demo/simulated audio
+            *self.youtube_error.borrow_mut() = None;
+            
+            if let Some(video_id) = extract_youtube_id(&track.url) {
+                // Create or update YouTube iframe player
+                if let Some(window) = web_sys::window() {
+                    if let Some(document) = window.document() {
+                        // Pause any existing audio element
+                        if let Some(ref audio) = *self.audio_element.borrow() {
+                            audio.pause().ok();
+                        }
+
+                        // Create YouTube player container if it doesn't exist
+                        let container = document
+                            .get_element_by_id("youtube_player_container")
+                            .unwrap_or_else(|| {
+                                let div = document.create_element("div").unwrap();
+                                div.set_id("youtube_player_container");
+                                div.set_attribute("style", 
+                                    "position:fixed; bottom:10px; right:10px; z-index:9999; \
+                                     background:#222; border-radius:8px; padding:5px; \
+                                     box-shadow: 0 4px 12px rgba(0,0,0,0.5);"
+                                ).ok();
+                                document.body().unwrap().append_child(&div).ok();
+                                div
+                            });
+
+                        // Set iframe content
+                        let embed_url = format!(
+                            "https://www.youtube.com/embed/{}?autoplay=1&controls=1",
+                            video_id
+                        );
+                        container.set_inner_html(&format!(
+                            r#"<iframe width="320" height="180" src="{}" 
+                               frameborder="0" allow="autoplay; encrypted-media" 
+                               allowfullscreen style="border-radius:4px;"></iframe>
+                               <button onclick="this.parentElement.style.display='none'" 
+                               style="position:absolute;top:-8px;right:-8px;background:#ff4444;
+                               color:white;border:none;border-radius:50%;width:24px;height:24px;
+                               cursor:pointer;font-size:14px;">✕</button>"#,
+                            embed_url
+                        ));
+                    }
+                }
             } else {
-                None
+                *self.youtube_error.borrow_mut() = Some("Could not extract YouTube video ID".to_string());
             }
-        };
-
-        // Update the audio element src if needed
+        } else {
+            // Standard audio file playback
+            self.demo_mode = false;
+            self.play_audio_url(&track.url);
+            
+            // Hide YouTube player if visible
+            if let Some(window) = web_sys::window() {
+                if let Some(document) = window.document() {
+                    if let Some(container) = document.get_element_by_id("youtube_player_container") {
+                        container.set_attribute("style", "display:none;").ok();
+                    }
+                }
+            }
+        }
+    }
+    
+    /// Play audio from a direct URL (used for both local files and resolved YouTube audio)
+    fn play_audio_url(&mut self, url: &str) {
+        // Initialize audio element and context if needed
+        self.ensure_audio_element_initialized();
+        
         if let Some(ref audio) = *self.audio_element.borrow() {
-            if let Some(url) = track_url {
-                audio.set_src(&url);
-            }
+            audio.set_src(url);
             audio.set_current_time(0.0);
             let _ = audio.play();
+        }
+    }
+    
+    /// Ensure audio element and WebAudio context are initialized for analysis
+    fn ensure_audio_element_initialized(&mut self) {
+        if self.audio_element.borrow().is_some() {
+            return;
+        }
+        
+        if let Some(window) = web_sys::window() {
+            if let Some(document) = window.document() {
+                let audio = document
+                    .get_element_by_id("visualizer_audio")
+                    .and_then(|el| el.dyn_into::<web_sys::HtmlAudioElement>().ok())
+                    .unwrap_or_else(|| {
+                        let a = document
+                            .create_element("audio")
+                            .unwrap()
+                            .dyn_into::<web_sys::HtmlAudioElement>()
+                            .unwrap();
+                        a.set_id("visualizer_audio");
+                        a.set_cross_origin(Some("anonymous"));
+                        document.body().unwrap().append_child(&a).ok();
+                        a
+                    });
+                
+                *self.audio_element.borrow_mut() = Some(audio.clone());
+                
+                // Initialize audio context for analysis
+                if self.audio_context.borrow().is_none() {
+                    if let Ok(ctx) = web_sys::AudioContext::new() {
+                        if let Ok(analyser) = ctx.create_analyser() {
+                            analyser.set_fft_size(512);
+                            analyser.set_smoothing_time_constant(0.8);
+                            
+                            if let Ok(source) = ctx.create_media_element_source(&audio) {
+                                source.connect_with_audio_node(&analyser).ok();
+                                analyser.connect_with_audio_node(&ctx.destination()).ok();
+                                
+                                *self.analyser_node.borrow_mut() = Some(analyser);
+                                *self.audio_context.borrow_mut() = Some(ctx);
+                                *self.file_audio_initialized.borrow_mut() = true;
+                                
+                                // Start polling audio data
+                                let analyser_for_poll = self.analyser_node.clone();
+                                let audio_data_for_poll = self.audio_data.clone();
+                                
+                                let poll_callback = Closure::wrap(Box::new(move || {
+                                    if let Some(ref analyser) = *analyser_for_poll.borrow() {
+                                        let freq_len = analyser.frequency_bin_count() as usize;
+                                        let time_len = analyser.fft_size() as usize;
+                                        let mut freq_data = vec![0u8; freq_len];
+                                        let mut time_data = vec![0u8; time_len];
+                                        
+                                        analyser.get_byte_frequency_data(&mut freq_data);
+                                        analyser.get_byte_time_domain_data(&mut time_data);
+                                        
+                                        *audio_data_for_poll.borrow_mut() = (freq_data, time_data);
+                                    }
+                                }) as Box<dyn Fn()>);
+                                
+                                window.set_interval_with_callback_and_timeout_and_arguments_0(
+                                    poll_callback.as_ref().unchecked_ref(),
+                                    16,
+                                ).ok();
+                                poll_callback.forget();
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     
@@ -1294,6 +1495,41 @@ impl eframe::App for MusicVisualizerApp {
 // HSL helper moved to `src/ui.rs` (used by drawing helpers there).
 
 // init_web_audio moved to src/audio.rs
+
+/// Extract YouTube video ID from various URL formats (youtube.com/watch?v=..., youtu.be/..., etc.)
+fn extract_youtube_id(url: &str) -> Option<String> {
+    // Try youtu.be/VIDEO_ID
+    if url.contains("youtu.be/") {
+        let parts: Vec<&str> = url.split("youtu.be/").collect();
+        if let Some(part) = parts.get(1) {
+            let id = part.split('?').next().unwrap_or(part).split('&').next().unwrap_or(part);
+            if !id.is_empty() {
+                return Some(id.to_string());
+            }
+        }
+    }
+    // Try youtube.com/watch?v=VIDEO_ID
+    if url.contains("v=") {
+        let parts: Vec<&str> = url.split("v=").collect();
+        if let Some(part) = parts.get(1) {
+            let id = part.split('&').next().unwrap_or(part);
+            if !id.is_empty() {
+                return Some(id.to_string());
+            }
+        }
+    }
+    // Try youtube.com/embed/VIDEO_ID
+    if url.contains("/embed/") {
+        let parts: Vec<&str> = url.split("/embed/").collect();
+        if let Some(part) = parts.get(1) {
+            let id = part.split('?').next().unwrap_or(part).split('&').next().unwrap_or(part);
+            if !id.is_empty() {
+                return Some(id.to_string());
+            }
+        }
+    }
+    None
+}
 
 // WASM entry point
 #[wasm_bindgen(start)]

@@ -25,6 +25,7 @@ web-sys = { version = "0.3", features = [
     "HtmlAudioElement",
     "HtmlMediaElement",
     "HtmlInputElement",
+    "HtmlElement",
     "File",
     "FileList",
     "Blob",
@@ -45,6 +46,11 @@ web-sys = { version = "0.3", features = [
     "EventTarget",
     "CssStyleDeclaration",
     "console",
+    "Request",
+    "RequestInit",
+    "RequestMode",
+    "Response",
+    "Headers",
 ] }
 console_error_panic_hook = "0.1"
 serde = { version = "1.0", features = ["derive"] }
