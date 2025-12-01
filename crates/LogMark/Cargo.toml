@@ -1,0 +1,37 @@
+[package]
+name = "LogMark"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+authors.workspace = true
+autobins = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "logmark"
+path = "src/main.rs"
+
+[dependencies]
+egui.workspace = true
+eframe.workspace = true
+petgraph.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+egui_graphs = { path = "../egui_graphs" }
+egui_commonmark = "0.22"
+regex = "1.12"
+
+# WASM dependencies (only for wasm32 target)
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = ["Window", "Document", "HtmlCanvasElement"] }
+console_error_panic_hook = "0.1"
+getrandom = { version = "0.3", features = ["wasm_js"] }
+
+[lints]
+workspace = true

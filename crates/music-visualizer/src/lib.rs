@@ -367,6 +367,8 @@ pub struct MusicVisualizerApp {
     visualizer_mode: VisualizerMode,
     // Unknown Pleasures visualizer instance
     unknown_visualizer: UnknownPleasuresVisualizer,
+    // System audio mode
+    system_audio_mode: Option<bool>,
 }
 
 impl Default for MusicVisualizerApp {
@@ -394,6 +396,7 @@ impl Default for MusicVisualizerApp {
             restore_fractal_on_back: false,
             visualizer_mode: VisualizerMode::Fractal,
             unknown_visualizer: UnknownPleasuresVisualizer::new(),
+            system_audio_mode: Some(false),
         }
     }
 }
@@ -714,11 +717,34 @@ impl MusicVisualizerApp {
                 if ui.selectable_label(self.demo_mode, "Demo").clicked() {
                     self.demo_mode = true;
                 }
-                if ui.selectable_label(!self.demo_mode, "Microphone").clicked() {
+                if ui.selectable_label(!self.demo_mode && !self.is_system_audio(), "Microphone").clicked() {
                     self.demo_mode = false;
+                    self.set_system_audio(false);
                     self.try_init_audio();
                 }
+                if ui.selectable_label(self.is_system_audio(), "System Audio").clicked() {
+                    self.demo_mode = false;
+                    self.set_system_audio(true);
+                    self.try_init_system_audio();
+                }
             });
+        }
+
+        // Helper methods for system audio
+        fn is_system_audio(&self) -> bool {
+            // Add a field to track system audio mode
+            self.system_audio_mode.unwrap_or(false)
+        }
+
+        fn set_system_audio(&mut self, enabled: bool) {
+            self.system_audio_mode = Some(enabled);
+        }
+
+        fn try_init_system_audio(&mut self) {
+            // Placeholder: actual implementation depends on browser support
+            // For now, show a warning
+            web_sys::console::log_1(&"System audio capture requested (not implemented)".into());
+        }
             
             if !self.demo_mode && !*self.audio_initialized.borrow() {
                 ui.colored_label(Color32::YELLOW, "⏳ Initializing microphone...");
@@ -1086,8 +1112,10 @@ impl MusicVisualizerApp {
     fn play_next(&mut self) {
         if let Some(next_idx) = self.playlist.get_next_index() {
             self.play_track(next_idx);
+        } else if !self.playlist.tracks.is_empty() {
+            // Loop to first track
+            self.play_track(0);
         } else {
-            // Si no hay siguiente, detener reproducción
             self.stop_playback();
         }
     }

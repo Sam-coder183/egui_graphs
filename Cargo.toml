@@ -5,6 +5,7 @@ members = [
   "crates/demo-web",
   "crates/code-analyzer-web",
   "crates/music-visualizer",
+  "crates/music-visualizer-native", "crates/LogMark",
 ]
 resolver = "2"
 
