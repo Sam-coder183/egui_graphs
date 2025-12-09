@@ -11,6 +11,18 @@ pub mod ui;
 
 pub use app::LogMarkApp;
 
+use std::sync::RwLock;
+
+pub struct GraphSettings {
+    pub font_size_cardinality: f32,
+    pub font_size_edge_label: f32,
+}
+
+pub static GRAPH_SETTINGS: RwLock<GraphSettings> = RwLock::new(GraphSettings {
+    font_size_cardinality: 12.0,
+    font_size_edge_label: 14.0,
+});
+
 // WASM entry point
 #[cfg(target_arch = "wasm32")]
 mod wasm {

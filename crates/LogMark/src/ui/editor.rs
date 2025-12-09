@@ -68,9 +68,11 @@ impl EditorState {
         wikilink_regex: &Regex,
         just_synced: bool
     ) {
-        let available_height = ui.available_height() - 60.0;
+        let mut current_cursor_idx = 0;
         
-        ScrollArea::vertical().max_height(available_height.max(200.0)).show(ui, |ui| {
+        ScrollArea::both()
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
             let response = CodeEditor::default()
                 .id_source(format!("content_editor_{}", node_idx.index()))
                 .with_syntax(syntax::markdown())
@@ -86,6 +88,7 @@ impl EditorState {
                 if let Some(state) = TextEdit::load_state(ui.ctx(), response.id) {
                     if let Some(range) = state.cursor.char_range() {
                         let cursor_idx = range.primary.index;
+                        current_cursor_idx = cursor_idx;
                         self.cursor_position = cursor_idx;
                         
                         // Check if the character before cursor is '/'
@@ -142,7 +145,8 @@ impl EditorState {
                 *change_count += 1;
                 
                 // Handle wikilinks
-                handle_wikilinks(graph, node_idx, &mut self.parser, wikilink_regex);
+                let enter_pressed = ui.input(|i| i.key_pressed(egui::Key::Enter));
+                handle_wikilinks(graph, node_idx, &mut self.parser, wikilink_regex, enter_pressed);
             }
         });
 
@@ -231,7 +235,7 @@ impl EditorState {
                     action_insert = true;
                 }
                 if action_insert {
-                    self.insert_slash_template(node_idx, graph, change_count, wikilink_regex);
+                    self.insert_slash_template(node_idx, graph, change_count, wikilink_regex, current_cursor_idx);
                 }
             }
         }
@@ -242,7 +246,8 @@ impl EditorState {
         node_idx: petgraph::stable_graph::NodeIndex,
         graph: &mut Graph<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge>,
         change_count: &mut usize,
-        wikilink_regex: &Regex
+        wikilink_regex: &Regex,
+        cursor_idx: usize
     ) {
         // Get the filtered items based on current query
         let filtered_items: Vec<_> = self.slash_menu_items.iter()
@@ -253,39 +258,54 @@ impl EditorState {
             .collect();
         
         if let Some((_, _, template)) = filtered_items.get(self.slash_menu_selection) {
-            // cursor_position is where cursor was right after typing '/'
-            // The user may have typed more characters after '/' which become the query
-            // We need to remove '/' + query characters from the buffer
             let chars: Vec<char> = self.content_buffer.chars().collect();
-            let slash_pos = self.cursor_position.saturating_sub(1); // Position of '/'
             
-            // Find how many characters to remove: '/' + any query typed after it
-            // Look for the actual end of the /query in the buffer
-            let query_len = self.slash_menu_query.chars().count();
-            let remove_end = (slash_pos + 1 + query_len).min(chars.len());
+            // Find the slash backwards from current cursor
+            let mut slash_pos = None;
+            // Use cursor_idx if valid, otherwise fallback to self.cursor_position or just search backwards from end if query matches
+            // But cursor_idx passed from show might be 0 if we didn't get state.
+            // If cursor_idx is 0, we might be in trouble. But action_insert happens when menu is open.
+            // If menu is open, we likely have a valid cursor position tracked.
             
-            let before_slash: String = chars.iter().take(slash_pos).collect();
-            let after_query: String = chars.iter().skip(remove_end).collect();
+            let search_end = if cursor_idx > 0 { cursor_idx } else { self.cursor_position };
             
-            // Find where the cursor should be placed (marked by '|' in template)
-            let template_str = *template;
-            let cursor_marker_pos = template_str.find('|').unwrap_or(template_str.len());
-            let template_before_cursor: String = template_str.chars().take(cursor_marker_pos).collect();
-            let template_after_cursor: String = template_str.chars().skip(cursor_marker_pos + 1).collect();
-            
-            // Build new content
-            let new_content = format!("{}{}{}{}", before_slash, template_before_cursor, template_after_cursor, after_query);
-            self.content_buffer = new_content;
-            
-            // Calculate new cursor position
-            self.cursor_position = before_slash.chars().count() + template_before_cursor.chars().count();
-            
-            // Save to node
-            if let Some(node) = graph.node_mut(node_idx) {
-                node.payload_mut().content = self.content_buffer.clone();
+            for i in (0..search_end).rev() {
+                if chars.get(i) == Some(&'/') {
+                    slash_pos = Some(i);
+                    break;
+                }
+                // Stop if we hit a newline or too far back?
+                // Just rely on finding the nearest slash.
             }
-            *change_count += 1;
-            handle_wikilinks(graph, node_idx, &mut self.parser, wikilink_regex);
+            
+            if let Some(sp) = slash_pos {
+                let before_slash: String = chars.iter().take(sp).collect();
+                // We replace everything from slash_pos to search_end (which should be the end of query)
+                // But wait, if the user typed query, search_end is after query.
+                // So we remove from sp to search_end.
+                
+                let after_cursor: String = chars.iter().skip(search_end).collect();
+                
+                // Find where the cursor should be placed (marked by '|' in template)
+                let template_str = *template;
+                let cursor_marker_pos = template_str.find('|').unwrap_or(template_str.len());
+                let template_before_cursor: String = template_str.chars().take(cursor_marker_pos).collect();
+                let template_after_cursor: String = template_str.chars().skip(cursor_marker_pos + 1).collect();
+                
+                // Build new content
+                let new_content = format!("{}{}{}{}", before_slash, template_before_cursor, template_after_cursor, after_cursor);
+                self.content_buffer = new_content;
+                
+                // Calculate new cursor position
+                self.cursor_position = before_slash.chars().count() + template_before_cursor.chars().count();
+                
+                // Save to node
+                if let Some(node) = graph.node_mut(node_idx) {
+                    node.payload_mut().content = self.content_buffer.clone();
+                }
+                *change_count += 1;
+                handle_wikilinks(graph, node_idx, &mut self.parser, wikilink_regex, false);
+            }
         }
         
         // Close the menu

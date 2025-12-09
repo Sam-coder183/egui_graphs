@@ -183,13 +183,21 @@ impl DisplayEdge<LogNodeData, LogEdgeData, Directed, u32, LogNode> for LogEdge {
             Stroke::NONE,
         ));
 
+        // Read settings
+        let (base_font_size_label, base_font_size_card) = {
+            if let Ok(settings) = crate::GRAPH_SETTINGS.read() {
+                (settings.font_size_edge_label, settings.font_size_cardinality)
+            } else {
+                (14.0, 12.0)
+            }
+        };
+
         // Label
         if let Some(text) = &self.label {
             let mid = screen_start + (screen_end - screen_start) * 0.5;
             
             // Dynamic font size based on zoom
-            // Base size 14.0, scaled by zoom, clamped for sanity
-            let font_size = ctx.meta.canvas_to_screen_size(14.0).max(12.0).min(40.0);
+            let font_size = ctx.meta.canvas_to_screen_size(base_font_size_label).max(12.0).min(40.0);
             
             // Calculate angle for rotation
             let angle = screen_dir.y.atan2(screen_dir.x);
@@ -247,7 +255,7 @@ impl DisplayEdge<LogNodeData, LogEdgeData, Directed, u32, LogNode> for LogEdge {
         // Cardinality
         if let Some(card) = &self.cardinality {
             let mid = screen_start + (screen_end - screen_start) * 0.5;
-            let font_size = ctx.meta.canvas_to_screen_size(12.0).max(10.0).min(30.0);
+            let font_size = ctx.meta.canvas_to_screen_size(base_font_size_card).max(10.0).min(30.0);
             
             let angle = screen_dir.y.atan2(screen_dir.x);
             let (angle, offset_dir) = if angle.abs() > std::f32::consts::FRAC_PI_2 {

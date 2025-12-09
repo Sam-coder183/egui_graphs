@@ -55,7 +55,7 @@ pub fn hardcoded_default_graph() -> Graph<LogNodeData, LogEdgeData, Directed, u3
 
     let overview = g.add_node(LogNodeData {
         label: "LogMark".to_string(),
-        content: "# LogMark\n\nWelcome to LogMark, a graph-based note app.\n\nBrowse nodes to learn features. Select a node to edit on the right.".to_string(),
+        content: "# LogMark\n\nWelcome to LogMark, a graph-based note app.\n\nBrowse nodes to learn features. Select a node to edit on the right.\n\n[[Auto-Commit|explains]]\n[[Layouts|shows]]\n[[Relationships|details]]\n[[Slash Menu|includes]]\n[[Lua|supports]]\n[[Hierarchy|adds]]".to_string(),
     });
 
     let auto_commit = g.add_node(LogNodeData {
@@ -65,22 +65,22 @@ pub fn hardcoded_default_graph() -> Graph<LogNodeData, LogEdgeData, Directed, u3
 
     let layouts = g.add_node(LogNodeData {
         label: "Layouts".to_string(),
-        content: "# Layouts\n\nSwitch layouts from the left Options bar.\n- Random: scattered.\n- Force: physics.\n- Hierarchical: tree view to fill the screen.".to_string(),
+        content: "# Layouts\n\nSwitch layouts from the left Options bar.\n- Random: scattered.\n- Force: physics.\n- Hierarchical: tree view to fill the screen.\n\n[[Hierarchy|offers]]".to_string(),
     });
 
     let relationships = g.add_node(LogNodeData {
         label: "Relationships".to_string(),
-        content: "# Relationships\n\nEdges show labels above arrows.\nUse [[WikiLinks]] or the slash menu to connect notes.".to_string(),
+        content: "# Relationships\n\nEdges show labels above arrows.\nUse `[[WikiLinks]]` or the slash menu to connect notes.".to_string(),
     });
 
     let slash = g.add_node(LogNodeData {
         label: "Slash Menu".to_string(),
-        content: "# Slash Menu\n\nType `/` to open. Navigate with ↑/↓. Press Enter or Tab to accept. Options: headings, Lua block, or link to another node.".to_string(),
+        content: "# Slash Menu\n\nType `/` to open. Navigate with ↑/↓. Press Enter or Tab to accept. Options: headings, Lua block, or link to another node.\n\n[[Relationships|creates]]".to_string(),
     });
 
     let lua = g.add_node(LogNodeData {
         label: "Lua".to_string(),
-        content: "# Lua Integration\n\nLogMark supports Lua scripting for dynamic content.\n\n## Usage\nCreate a code block with `lua` language:\n\n```lua\n-- Example\nlocal x = 10\nprint('Value:', x)\ngraph.add_node('New Node')\n```\n\n## Features\n- **Run**: Execute the script.\n- **Debug**: Inspect variables in the left sidebar.\n- **API**:\n  - `print(val)`: Print to output.\n  - `graph.add_node('label')`: Create a node.\n  - `graph.add_edge('from', 'to', 'label')`: Connect nodes.\n  - `graph.list_nodes()`: List all nodes.".to_string(),
+        content: "# Lua Integration\n\nLogMark supports Lua scripting for dynamic content.\n\n## Usage\nCreate a code block with `lua` language:\n\n```lua\n-- Example\nlocal x = 10\nprint('Value:', x)\ngraph.add_node('New Node')\n```\n\n## Features\n- **Run**: Execute the script.\n- **Debug**: Inspect variables in the left sidebar.\n- **API**:\n  - `print(val)`: Print to output.\n  - `graph.add_node('label')`: Create a node.\n  - `graph.add_edge('from', 'to', 'label')`: Connect nodes.\n  - `graph.list_nodes()`: List all nodes.\n\n[[Relationships|annotates]]".to_string(),
     });
 
     let hierarchy = g.add_node(LogNodeData {

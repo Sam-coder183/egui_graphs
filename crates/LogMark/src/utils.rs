@@ -59,3 +59,13 @@ pub fn calculate_edge_cardinality(
     
     format!("{}:{}", source_card, target_card)
 }
+
+pub fn process_wikilinks_for_preview(content: &str) -> String {
+    let re = regex::Regex::new(r"\[\[(.*?)(?:\|(.*?))?\]\]").unwrap();
+    re.replace_all(content, |caps: &regex::Captures| {
+        let target = &caps[1];
+        let label = caps.get(2).map(|m| m.as_str()).unwrap_or(target);
+        // Use a custom scheme that we might be able to catch, or just a placeholder
+        format!("[{}]({}{})", label, "node://", target) 
+    }).to_string()
+}

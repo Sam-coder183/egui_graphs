@@ -11,7 +11,8 @@ pub fn handle_wikilinks(
     graph: &mut Graph<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge>,
     node_idx: petgraph::stable_graph::NodeIndex,
     parser: &mut MarkdownParser,
-    wikilink_regex: &Regex
+    wikilink_regex: &Regex,
+    create_missing_nodes: bool
 ) {
     let content = graph.node(node_idx).unwrap().payload().content.clone();
     
@@ -84,6 +85,9 @@ pub fn handle_wikilinks(
         let target_idx = match target_idx {
             Some(idx) => idx,
             None => {
+                if !create_missing_nodes {
+                    continue;
+                }
                 let new_node_data = LogNodeData {
                     label: target_label.clone(),
                     content: format!("# {}", target_label),

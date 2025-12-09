@@ -33,16 +33,19 @@ use ron::ser::{to_string_pretty, PrettyConfig};
 
 use crate::graph::{LogNode, LogEdge, LogNodeData, LogEdgeData};
 use crate::types::{AppLayout, QuickTemplate, AppTab, VisualizationMode, SidebarTab, EditorMode};
-use crate::utils::calculate_edge_cardinality;
+use crate::utils::{calculate_edge_cardinality, process_wikilinks_for_preview};
 use crate::persistence::{load_autosave, commit_changes, default_graph};
 use crate::lua::LuaEngine;
 use crate::ui::editor::EditorState;
 use crate::ui::settings::Settings3D;
 use crate::ui::help::show_help_window;
+use crate::ui::settings_window::SettingsWindow;
 use crate::actions::cleanup_orphans;
+use crate::GRAPH_SETTINGS;
 
 pub struct LogMarkApp {
     graph: Graph<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge>,
+    settings_window: SettingsWindow,
     editing_label: Option<petgraph::stable_graph::NodeIndex>,
     label_edit_buffer: String,
     editing_edge: Option<EdgeIndex>,
@@ -107,6 +110,9 @@ pub struct LogMarkApp {
     
     // Entity Relationship Cardinality
     show_cardinality: bool,
+
+    // Selection State
+    selected_node: Option<petgraph::stable_graph::NodeIndex>,
 }
 
 impl LogMarkApp {
@@ -117,6 +123,7 @@ impl LogMarkApp {
 
         Self {
             graph,
+            settings_window: SettingsWindow::default(),
             editing_label: None,
             label_edit_buffer: String::new(),
             editing_edge: None,
@@ -156,6 +163,7 @@ impl LogMarkApp {
             current_tab: AppTab::Graph,
             visualization_mode: VisualizationMode::TwoD,
             show_cardinality: false,
+            selected_node: None,
         }
     }
 
@@ -315,6 +323,25 @@ impl App for LogMarkApp {
             ctx.set_visuals(egui::Visuals::light());
         }
 
+        // Undo/Redo shortcuts
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, Key::Z)) {
+            self.undo();
+        }
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL | egui::Modifiers::SHIFT, Key::Z)) {
+            self.redo();
+        }
+
+        // Delete node shortcut
+        if ctx.input(|i| i.key_pressed(Key::Delete)) && !ctx.wants_keyboard_input() {
+             if let Some(idx) = self.selected_node {
+                 self.push_undo();
+                 self.graph.remove_node(idx);
+                 self.selected_node = None;
+                 self.change_count += 1;
+                 self.push_toast("Deleted node");
+             }
+        }
+
         self.prune_toasts();
 
         #[cfg(target_arch = "wasm32")]
@@ -322,6 +349,13 @@ impl App for LogMarkApp {
 
         // Help Window
         show_help_window(ctx, &mut self.show_help);
+
+        // Settings Window
+        self.settings_window.show(ctx);
+        if let Ok(mut settings) = GRAPH_SETTINGS.write() {
+            settings.font_size_cardinality = self.settings_window.font_size_cardinality;
+            settings.font_size_edge_label = self.settings_window.font_size_edge_label;
+        }
 
         // Top Panel
         TopBottomPanel::top("top_menu").show(ctx, |ui| {
@@ -361,6 +395,7 @@ impl App for LogMarkApp {
                     if let Some(node) = graph.node_mut(start) { node.set_location(egui::Pos2::new(0.0, 0.0)); }
                     self.graph = graph;
                     self.graph.set_selected_nodes(vec![]); // Clear selection
+                    self.selected_node = None;
                     self.layout = AppLayout::Hierarchical;
                     self.fit_to_view_next = true;
                     self.editor_state.content_buffer.clear(); // Clear edit buffer
@@ -375,6 +410,7 @@ impl App for LogMarkApp {
                                 if let Ok(graph) = from_str(&content) {
                                     self.push_undo();
                                     self.graph = graph;
+                                    self.selected_node = None;
                                     self.push_toast("Opened graph");
                                 } else {
                                     self.push_toast("Failed to parse graph");
@@ -412,6 +448,7 @@ impl App for LogMarkApp {
                 if ui.button("📚 Reset Docs").clicked() {
                     self.push_undo();
                     self.graph = default_graph();
+                    self.selected_node = None;
                     self.layout = AppLayout::Hierarchical;
                     self.fit_to_view_next = true;
                     self.editor_state.last_edited_node = None; // Reset tracked node
@@ -423,10 +460,10 @@ impl App for LogMarkApp {
                     self.show_help = true;
                 }
 
-                if ui.button("↪ Undo").clicked() {
+                if ui.button("↪ Undo (Ctrl+Z)").clicked() {
                     self.undo();
                 }
-                if ui.button("↪ Redo").clicked() {
+                if ui.button("↪ Redo (Ctrl+Shift+Z)").clicked() {
                     self.redo();
                 }
 
@@ -500,6 +537,9 @@ impl App for LogMarkApp {
                         let count = cleanup_orphans(&mut self.graph);
                         self.push_toast(format!("Removed {} orphans", count));
                         self.change_count += 1;
+                    }
+                    if ui.button("⚙ Settings").clicked() {
+                        self.settings_window.open = true;
                     }
                     ui.separator();
                     ui.label("Layout:");
@@ -706,111 +746,119 @@ impl App for LogMarkApp {
 
                     ui.separator();
 
-                if let Some(idx) = self.graph.selected_nodes().first() {
-                    let idx = *idx;
-                    let node = self.graph.node(idx).unwrap();
-                    let label = node.payload().label.clone();
-                    
-                    // Sync editor buffer if node changed
-                    let just_synced = if self.editor_state.last_edited_node != Some(idx) {
-                        self.editor_state.last_edited_node = Some(idx);
-                        self.editor_state.content_buffer = node.payload().content.clone();
-                        self.editor_state.completer.push_word(&label); // Add title to completions
-                        true
-                    } else {
-                        false
-                    };
+                if let Some(idx) = self.selected_node {
+                    // Ensure node still exists (might have been deleted)
+                    if let Some(node) = self.graph.node(idx) {
+                        let label = node.payload().label.clone();
+                        
+                        // Sync editor buffer if node changed
+                        let just_synced = if self.editor_state.last_edited_node != Some(idx) {
+                            self.editor_state.last_edited_node = Some(idx);
+                            self.editor_state.content_buffer = node.payload().content.clone();
+                            self.editor_state.completer.push_word(&label); // Add title to completions
+                            true
+                        } else {
+                            false
+                        };
 
-                    ui.horizontal(|ui| {
-                        ui.selectable_value(&mut self.sidebar_tab, SidebarTab::Edit, "✏ Edit");
-                        ui.selectable_value(&mut self.sidebar_tab, SidebarTab::Preview, "👁 Preview");
-                        ui.selectable_value(&mut self.sidebar_tab, SidebarTab::Lua, "🌙 Lua");
-                    });
-                    ui.separator();
+                        ui.horizontal(|ui| {
+                            ui.selectable_value(&mut self.sidebar_tab, SidebarTab::Edit, "✏ Edit");
+                            ui.selectable_value(&mut self.sidebar_tab, SidebarTab::Preview, "👁 Preview");
+                            ui.selectable_value(&mut self.sidebar_tab, SidebarTab::Lua, "🌙 Lua");
+                        });
+                        ui.separator();
 
-                    match self.sidebar_tab {
-                        SidebarTab::Preview => {
-                            egui::ScrollArea::vertical().show(ui, |ui| {
-                                ui.heading(&label);
-                                ui.separator();
-                                CommonMarkViewer::new()
-                                    .show(ui, &mut self.markdown_cache, &node.payload().content);
-                            });
-                        }
-                        SidebarTab::Lua => {
-                            ui.label("Lua Scripting for this node");
-                            ui.separator();
-                            
-                            // Extract Lua blocks
-                            let content = &node.payload().content;
-                            let mut lua_blocks = Vec::new();
-                            for cap in self.lua_regex.captures_iter(content) {
-                                if let Some(m) = cap.get(1) {
-                                    lua_blocks.push(m.as_str().to_string());
-                                }
+                        match self.sidebar_tab {
+                            SidebarTab::Preview => {
+                                egui::ScrollArea::both()
+                                    .auto_shrink([false, false])
+                                    .show(ui, |ui| {
+                                    ui.heading(&label);
+                                    ui.separator();
+                                    let processed = process_wikilinks_for_preview(&node.payload().content);
+                                    CommonMarkViewer::new()
+                                        .show(ui, &mut self.markdown_cache, &processed);
+                                });
                             }
+                            SidebarTab::Lua => {
+                                ui.label("Lua Scripting for this node");
+                                ui.separator();
+                                
+                                // Extract Lua blocks
+                                let content = &node.payload().content;
+                                let mut lua_blocks = Vec::new();
+                                for cap in self.lua_regex.captures_iter(content) {
+                                    if let Some(m) = cap.get(1) {
+                                        lua_blocks.push(m.as_str().to_string());
+                                    }
+                                }
 
-                            egui::ScrollArea::vertical().show(ui, |ui| {
-                                if !lua_blocks.is_empty() {
-                                    for (i, block) in lua_blocks.iter().enumerate() {
-                                        ui.group(|ui| {
-                                            ui.label(format!("Block {}", i + 1));
-                                            ui.monospace(block);
-                                            if ui.button("▶ Run").clicked() {
-                                                self.lua_engine.run_script(
-                                                    block, 
-                                                    &mut self.graph, 
-                                                    &mut self.change_count,
-                                                    &mut self.undo_stack,
-                                                    &mut self.redo_stack
-                                                );
-                                                self.lua_sidebar_open = true;
-                                            }
-                                            
-                                            // Quick actions
-                                            ui.horizontal(|ui| {
-                                                if ui.button("Debug").clicked() {
+                                egui::ScrollArea::vertical().show(ui, |ui| {
+                                    if !lua_blocks.is_empty() {
+                                        for (i, block) in lua_blocks.iter().enumerate() {
+                                            ui.group(|ui| {
+                                                ui.label(format!("Block {}", i + 1));
+                                                ui.monospace(block);
+                                                if ui.button("▶ Run").clicked() {
+                                                    self.lua_engine.run_script(
+                                                        block, 
+                                                        &mut self.graph, 
+                                                        &mut self.change_count,
+                                                        &mut self.undo_stack,
+                                                        &mut self.redo_stack
+                                                    );
                                                     self.lua_sidebar_open = true;
                                                 }
-                                                if ui.button("Copy").clicked() {
-                                                    ui.ctx().copy_text(block.clone());
-                                                    self.push_toast("Copied to clipboard");
-                                                }
+                                                
+                                                // Quick actions
+                                                ui.horizontal(|ui| {
+                                                    if ui.button("Debug").clicked() {
+                                                        self.lua_sidebar_open = true;
+                                                    }
+                                                    if ui.button("Copy").clicked() {
+                                                        ui.ctx().copy_text(block.clone());
+                                                        self.push_toast("Copied to clipboard");
+                                                    }
+                                                });
                                             });
-                                        });
-                                    }
-                                } else {
-                                    ui.label("📝 No Lua block in current node.");
-                                    ui.add_space(4.0);
-                                    if ui.button("➕ Add Lua Block").clicked() {
-                                        self.editor_state.content_buffer.push_str("\n\n```lua\n-- Your Lua script here\nprint('Hello!')\n```\n");
-                                        if let Some(node) = self.graph.node_mut(idx) {
-                                            node.payload_mut().content = self.editor_state.content_buffer.clone();
                                         }
-                                        self.change_count += 1;
+                                    } else {
+                                        ui.label("📝 No Lua block in current node.");
+                                        ui.add_space(4.0);
+                                        if ui.button("➕ Add Lua Block").clicked() {
+                                            self.editor_state.content_buffer.push_str("\n\n```lua\n-- Your Lua script here\nprint('Hello!')\n```\n");
+                                            if let Some(node) = self.graph.node_mut(idx) {
+                                                node.payload_mut().content = self.editor_state.content_buffer.clone();
+                                            }
+                                            self.change_count += 1;
+                                        }
                                     }
-                                }
-                            });
-                        }
-                        SidebarTab::Edit => {
-                            // Edit Tab - Full text editor with slash menu
-                            ui.horizontal(|ui| {
-                                ui.label(format!("Editing: {}", label));
-                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                    ui.label("Type / for commands");
                                 });
-                            });
-                            ui.separator();
-                            
-                            self.editor_state.show(
-                                ui, 
-                                idx, 
-                                &mut self.graph, 
-                                &mut self.change_count, 
-                                &self.wikilink_regex,
-                                just_synced
-                            );
+                            }
+                            SidebarTab::Edit => {
+                                // Edit Tab - Full text editor with slash menu
+                                ui.horizontal(|ui| {
+                                    ui.label(format!("Editing: {}", label));
+                                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                        ui.label("Type / for commands");
+                                    });
+                                });
+                                ui.separator();
+                                
+                                self.editor_state.show(
+                                    ui, 
+                                    idx, 
+                                    &mut self.graph, 
+                                    &mut self.change_count, 
+                                    &self.wikilink_regex,
+                                    just_synced
+                                );
+                            }
                         }
+                    } else {
+                        // Node was deleted or invalid
+                        self.selected_node = None;
+                        ui.label("Select a node to view details.");
                     }
                 } else {
                     ui.label("Select a node to view details.");
@@ -852,11 +900,11 @@ impl App for LogMarkApp {
                     let settings_interaction = SettingsInteraction::default()
                         .with_dragging_enabled(true)
                         .with_node_clicking_enabled(true)
-                        .with_node_selection_enabled(true)
-                        .with_node_selection_multi_enabled(true)
+                        .with_node_selection_enabled(false)
+                        .with_node_selection_multi_enabled(false)
                         .with_edge_clicking_enabled(true)
-                        .with_edge_selection_enabled(true)
-                        .with_edge_selection_multi_enabled(true);
+                        .with_edge_selection_enabled(false)
+                        .with_edge_selection_multi_enabled(false);
                     
                     let settings_navigation = SettingsNavigation::default()
                         .with_zoom_and_pan_enabled(true)
@@ -865,33 +913,41 @@ impl App for LogMarkApp {
                     self.fit_to_view_next = false;
 
                     // Apply layout
-                    match self.layout {
+                    let response = match self.layout {
                         AppLayout::Random => {
                             let mut graph_view = GraphView::<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge, LayoutStateRandom, LayoutRandom>::new(&mut self.graph)
                                 .with_interactions(&settings_interaction)
                                 .with_navigations(&settings_navigation)
                                 .with_event_sink(&sink);
-                            ui.add(&mut graph_view);
+                            ui.add(&mut graph_view)
                         },
                         AppLayout::Force => {
                             let mut graph_view = GraphView::<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge, FruchtermanReingoldState, LayoutForceDirected<FruchtermanReingold>>::new(&mut self.graph)
                                 .with_interactions(&settings_interaction)
                                 .with_navigations(&settings_navigation)
                                 .with_event_sink(&sink);
-                            ui.add(&mut graph_view);
+                            ui.add(&mut graph_view)
                         },
                         AppLayout::Hierarchical => {
                             let mut graph_view = GraphView::<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge, LayoutStateHierarchical, LayoutHierarchical>::new(&mut self.graph)
                                 .with_interactions(&settings_interaction)
                                 .with_navigations(&settings_navigation)
                                 .with_event_sink(&sink);
-                            ui.add(&mut graph_view);
+                            ui.add(&mut graph_view)
                         },
-                    }
+                    };
 
                     // Handle interactions
+                    let mut element_clicked = false;
                     while let Ok(event) = receiver.try_recv() {
                         match event {
+                            GraphEvent::NodeClick(payload) => {
+                                let idx = NodeIndex::new(payload.id);
+                                self.selected_node = Some(idx);
+                                self.graph.set_selected_nodes(vec![idx]);
+                                self.sidebar_expanded = true;
+                                element_clicked = true;
+                            }
                             GraphEvent::NodeDoubleClick(payload) => {
                                 let idx = NodeIndex::new(payload.id);
                                 self.editing_label = Some(idx);
@@ -899,12 +955,20 @@ impl App for LogMarkApp {
                                 // We don't have easy access to hover pos from event, so we center or use last known mouse pos
                                 // For now, center
                                 self.editing_pos = None; 
+                                element_clicked = true;
                             }
                             GraphEvent::EdgeClick(_payload) => {
                                 // Optional: Handle edge click
+                                element_clicked = true;
                             }
                             _ => {}
                         }
+                    }
+                    
+                    // Deselect if background clicked
+                    if response.clicked() && !element_clicked {
+                        self.graph.set_selected_nodes(vec![]);
+                        self.selected_node = None;
                     }
 
                     // Apply 3D projection if enabled
@@ -914,14 +978,17 @@ impl App for LogMarkApp {
                 }
                 
                 AppTab::Preview => {
-                    egui::ScrollArea::vertical().show(ui, |ui| {
+                    egui::ScrollArea::both()
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| {
                         ui.heading("Graph Preview");
                         ui.separator();
                         for idx in self.graph.g().node_indices() {
                             if let Some(node) = self.graph.node(idx) {
                                 ui.heading(&node.payload().label);
+                                let processed = process_wikilinks_for_preview(&node.payload().content);
                                 CommonMarkViewer::new()
-                                    .show(ui, &mut self.markdown_cache, &node.payload().content);
+                                    .show(ui, &mut self.markdown_cache, &processed);
                                 ui.separator();
                             }
                         }
@@ -929,6 +996,42 @@ impl App for LogMarkApp {
                 }
             }
         });
+
+        // Handle node:// links from markdown
+        let mut node_to_select = None;
+        ctx.output_mut(|o| {
+            let mut command_to_remove = None;
+            for (i, cmd) in o.commands.iter().enumerate() {
+                if let egui::OutputCommand::OpenUrl(open_url) = cmd {
+                    if open_url.url.starts_with("node://") {
+                        let label = open_url.url.strip_prefix("node://").unwrap();
+                        node_to_select = Some(label.to_string());
+                        command_to_remove = Some(i);
+                        break;
+                    }
+                }
+            }
+            
+            if let Some(i) = command_to_remove {
+                o.commands.remove(i);
+            }
+        });
+
+        if let Some(label) = node_to_select {
+            let decoded_label = label.replace("%20", " ");
+            if let Some(idx) = self.graph.g().node_indices().find(|&i| {
+                self.graph.node(i).map(|n| n.payload().label == decoded_label).unwrap_or(false)
+            }) {
+                self.selected_node = Some(idx);
+                self.graph.set_selected_nodes(vec![idx]);
+                self.sidebar_expanded = true;
+                self.sidebar_tab = SidebarTab::Preview;
+                // Optional: Switch to graph view to show context
+                // self.current_tab = AppTab::Graph; 
+            } else {
+                self.push_toast(format!("Node not found: {}", decoded_label));
+            }
+        }
     }
 }
 
