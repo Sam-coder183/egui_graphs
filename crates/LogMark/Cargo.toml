@@ -12,7 +12,7 @@ autobins = false
 crate-type = ["cdylib", "rlib"]
 
 [[bin]]
-name = "logmark"
+name = "logmark_app"
 path = "src/main.rs"
 
 [dependencies]
@@ -26,6 +26,9 @@ egui_commonmark = "0.22"
 regex = "1.12"
 ron = "0.12.0"
 rfd = "0.16.0"
+sublime_fuzzy = "0.7.0"
+log = "0.4"
+webbrowser = "1.0.6"
 
 # WASM dependencies (only for wasm32 target)
 [target.'cfg(target_arch = "wasm32")'.dependencies]

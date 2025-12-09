@@ -21,10 +21,83 @@
                 display: block;
                 outline: none;
             }
+            .loading {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: white;
+                font-family: sans-serif;
+                text-align: center;
+            }
+            .lds-dual-ring {
+                display: inline-block;
+                width: 80px;
+                height: 80px;
+            }
+            .lds-dual-ring:after {
+                content: " ";
+                display: block;
+                width: 64px;
+                height: 64px;
+                margin: 8px;
+                border-radius: 50%;
+                border: 6px solid #fff;
+                border-color: #fff transparent #fff transparent;
+                animation: lds-dual-ring 1.2s linear infinite;
+            }
+            @keyframes lds-dual-ring {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
         </style>
-        <link data-trunk rel="rust" data-cargo-manifest="./Cargo.toml" />
+        <link data-trunk rel="rust" data-target-name="logmark" />
     </head>
     <body>
         <canvas id="the_canvas_id"></canvas>
+        <div class="loading" id="loading">
+            <p>Loading LogMark...</p>
+            <div class="lds-dual-ring"></div>
+        </div>
+
+        <script>
+            // Wait for the WASM module to load (triggered by trunk)
+            document.addEventListener("TrunkApplicationStarted", async (event) => {
+                console.log("WASM module loaded, starting app...");
+                
+                try {
+                    // Get the bindings from the global scope (trunk puts them there)
+                    const bindings = window.wasmBindings;
+                    
+                    // Create the WebHandle and start the app
+                    const handle = new bindings.WebHandle();
+                    const canvas = document.getElementById("the_canvas_id");
+                    
+                    await handle.start(canvas);
+                    
+                    console.log("LogMark started successfully!");
+                    document.getElementById("loading").style.display = "none";
+                    
+                    // Focus the canvas to receive keyboard events
+                    canvas.focus();
+                    
+                    // Optional: Check for panics periodically
+                    setInterval(() => {
+                        if (handle.has_panicked()) {
+                            const msg = handle.panic_message() || "Unknown error";
+                            console.error("LogMark panicked:", msg);
+                            console.error("Callstack:", handle.panic_callstack());
+                        }
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error("Failed to start LogMark:", error);
+                    document.getElementById("loading").innerHTML = `
+                        <p>Failed to start LogMark</p>
+                        <p style="font-size: 14px;">${error}</p>
+                    `;
+                }
+            });
+        </script>
     </body>
 </html>

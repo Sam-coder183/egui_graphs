@@ -8,38 +8,64 @@ pub use app::LogMarkApp;
 mod wasm {
     use super::LogMarkApp;
     use wasm_bindgen::prelude::*;
-    use wasm_bindgen::JsCast;
-    use web_sys::HtmlCanvasElement;
 
-    #[wasm_bindgen(start)]
-    pub fn start() -> Result<(), JsValue> {
-        console_error_panic_hook::set_once();
-        wasm_bindgen_futures::spawn_local(async {
-            let _ = run().await;
-        });
-        Ok(())
+    /// Our handle to the web app from JavaScript.
+    #[derive(Clone)]
+    #[wasm_bindgen]
+    pub struct WebHandle {
+        runner: eframe::WebRunner,
     }
 
     #[wasm_bindgen]
-    pub async fn run() -> Result<(), JsValue> {
-        let window = web_sys::window().ok_or_else(|| JsValue::from_str("no window"))?;
-        let document = window
-            .document()
-            .ok_or_else(|| JsValue::from_str("no document"))?;
-        let canvas = document
-            .get_element_by_id("the_canvas_id")
-            .ok_or_else(|| JsValue::from_str("canvas with id 'the_canvas_id' not found"))?
-            .dyn_into::<HtmlCanvasElement>()
-            .map_err(|_| JsValue::from_str("failed to cast to HtmlCanvasElement"))?;
+    impl WebHandle {
+        /// Installs a panic hook, then returns.
+        #[allow(clippy::new_without_default)]
+        #[wasm_bindgen(constructor)]
+        pub fn new() -> Self {
+            // Redirect [`log`] message to `console.log` and friends:
+            eframe::WebLogger::init(log::LevelFilter::Debug).ok();
+            
+            Self {
+                runner: eframe::WebRunner::new(),
+            }
+        }
 
-        let web_options = eframe::WebOptions::default();
-        eframe::WebRunner::new()
-            .start(
-                canvas,
-                web_options,
-                Box::new(|cc| Ok::<Box<dyn eframe::App>, _>(Box::new(LogMarkApp::new(cc)))),
-            )
-            .await?;
-        Ok(())
+        /// Call this once from JavaScript to start your app.
+        #[wasm_bindgen]
+        pub async fn start(
+            &self,
+            canvas: web_sys::HtmlCanvasElement,
+        ) -> Result<(), wasm_bindgen::JsValue> {
+            self.runner
+                .start(
+                    canvas,
+                    eframe::WebOptions::default(),
+                    Box::new(|cc| Ok(Box::new(LogMarkApp::new(cc)))),
+                )
+                .await
+        }
+
+        /// Shut down eframe and clean up resources.
+        #[wasm_bindgen]
+        pub fn destroy(&self) {
+            self.runner.destroy();
+        }
+
+        /// The JavaScript can check whether or not your app has crashed:
+        #[wasm_bindgen]
+        pub fn has_panicked(&self) -> bool {
+            self.runner.has_panicked()
+        }
+
+        #[wasm_bindgen]
+        pub fn panic_message(&self) -> Option<String> {
+            self.runner.panic_summary().map(|s| s.message())
+        }
+
+        #[wasm_bindgen]
+        pub fn panic_callstack(&self) -> Option<String> {
+            self.runner.panic_summary().map(|s| s.callstack())
+        }
     }
 }
+

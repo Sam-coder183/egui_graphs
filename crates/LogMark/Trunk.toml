@@ -1,6 +1,3 @@
 [build]
 target = "index.html"
-
-# Disable wasm-opt due to compatibility issues with bulk memory operations
-[tools]
-wasm_opt = "Off"
+dist = "dist"
