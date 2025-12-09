@@ -5,326 +5,26 @@
                 id: Some(0),
                 props: (
                     payload: (
-                        label: "Start Here",
-                        content: "# Start Here\n\nThis is your new graph. Double-click to edit this node, or use the Quick Add panel on the left to create more nodes.\n\nTry typing `/` in the edit tab to see the slash menu!\n\n\n```lua\n-- Create multiple related nodes\nlocal topics = \'Rust,Python,JavaScript\'\n-- Then add nodes manually for each\ngraph.add_node(\'Rust\')\ngraph.add_node(\'Python\')\ngraph.add_node(\'JavaScript\')\n```",
+                        label: "Start",
+                        content: "# Start Here\n# hola que tal\n/  \nThis is your new graph. Double-click to edit this node, or use the Quick Add panel on the left to create more nodes.\n\nTry typing `/` in the edit tab to see the slash menu!\n\n- [ ] \n\n\n[\n",
                     ),
                     label: "node 0",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 127.50913,
-                        y: 197.06982,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 127.50913,
-                        y: 197.06982,
-                    ),
-                    label: "Start Here",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(1),
-                props: (
-                    payload: (
-                        label: "Rust",
-                        content: "# Rust\nCreated by Lua script.\n\n[[JavaSc]]",
-                    ),
-                    label: "node 1",
                     selected: true,
                     dragged: false,
                     hovered: false,
                     color: None,
                     location: (
-                        x: 87.5892,
-                        y: 111.027016,
+                        x: -5.76995,
+                        y: -0.12943782,
                     ),
                 ),
                 display: (
                     pos: (
-                        x: 87.5892,
-                        y: 111.027016,
+                        x: -5.76995,
+                        y: -0.12943782,
                     ),
-                    label: "Rust",
+                    label: "Start",
                     selected: true,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(2),
-                props: (
-                    payload: (
-                        label: "Python",
-                        content: "# Python\nCreated by Lua script.",
-                    ),
-                    label: "node 2",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 15.24356,
-                        y: 219.11972,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 15.24356,
-                        y: 219.11972,
-                    ),
-                    label: "Python",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(3),
-                props: (
-                    payload: (
-                        label: "JavaScript",
-                        content: "# JavaScript\nCreated by Lua script.\n\n\n\n```lua\n-- Analyze graph structure\ngraph.node_count()\ngraph.edge_count()\ngraph.list_nodes()\ngraph.list_edges()\n```\n",
-                    ),
-                    label: "node 3",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 240.93613,
-                        y: 141.3242,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 240.93613,
-                        y: 141.3242,
-                    ),
-                    label: "JavaScript",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(4),
-                props: (
-                    payload: (
-                        label: "",
-                        content: "# ",
-                    ),
-                    label: "node 4",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                    label: "",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(5),
-                props: (
-                    payload: (
-                        label: "J",
-                        content: "# J",
-                    ),
-                    label: "node 5",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                    label: "J",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(6),
-                props: (
-                    payload: (
-                        label: "Ja",
-                        content: "# Ja",
-                    ),
-                    label: "node 6",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                    label: "Ja",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(7),
-                props: (
-                    payload: (
-                        label: "Jav",
-                        content: "# Jav",
-                    ),
-                    label: "node 7",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                    label: "Jav",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(8),
-                props: (
-                    payload: (
-                        label: "Java",
-                        content: "# Java",
-                    ),
-                    label: "node 8",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                    label: "Java",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(9),
-                props: (
-                    payload: (
-                        label: "JavaS",
-                        content: "# JavaS",
-                    ),
-                    label: "node 9",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                    label: "JavaS",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(10),
-                props: (
-                    payload: (
-                        label: "JavaSc",
-                        content: "# JavaSc",
-                    ),
-                    label: "node 10",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 137.5892,
-                        y: 161.02701,
-                    ),
-                    label: "JavaSc",
-                    selected: false,
                     dragged: false,
                     hovered: false,
                     radius: 30.0,
@@ -334,135 +34,22 @@
         ],
         node_holes: [],
         edge_property: directed,
-        edges: [
-            Some((1, 4, (
-                id: Some(0),
-                display: (
-                    selected: false,
-                    label: Some("links to"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("links to"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 0",
-                ),
-                _marker: (),
-            ))),
-            Some((1, 5, (
-                id: Some(1),
-                display: (
-                    selected: false,
-                    label: Some("links to"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("links to"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 1",
-                ),
-                _marker: (),
-            ))),
-            Some((1, 6, (
-                id: Some(2),
-                display: (
-                    selected: false,
-                    label: Some("links to"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("links to"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 2",
-                ),
-                _marker: (),
-            ))),
-            Some((1, 7, (
-                id: Some(3),
-                display: (
-                    selected: false,
-                    label: Some("links to"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("links to"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 3",
-                ),
-                _marker: (),
-            ))),
-            Some((1, 8, (
-                id: Some(4),
-                display: (
-                    selected: false,
-                    label: Some("links to"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("links to"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 4",
-                ),
-                _marker: (),
-            ))),
-            Some((1, 9, (
-                id: Some(5),
-                display: (
-                    selected: false,
-                    label: Some("links to"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("links to"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 5",
-                ),
-                _marker: (),
-            ))),
-            Some((1, 10, (
-                id: Some(6),
-                display: (
-                    selected: false,
-                    label: Some("links to"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("links to"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 6",
-                ),
-                _marker: (),
-            ))),
-        ],
+        edges: [],
     ),
     selected_nodes: [
-        1,
+        0,
     ],
     selected_edges: [],
     dragged_node: None,
     hovered_node: None,
     bounds: (
         min: (
-            x: -14.75644,
-            y: 81.02702,
+            x: -35.76995,
+            y: -30.129438,
         ),
         max: (
-            x: 270.93613,
-            y: 249.11972,
+            x: 24.23005,
+            y: 29.870562,
         ),
     ),
 )

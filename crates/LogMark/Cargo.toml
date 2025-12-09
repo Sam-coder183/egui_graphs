@@ -21,7 +21,7 @@ eframe.workspace = true
 petgraph = { workspace = true, features = ["serde-1"] }
 serde.workspace = true
 serde_json.workspace = true
-egui_graphs = { path = "../egui_graphs" }
+egui_graphs = { path = "../egui_graphs", features = ["events"] }
 egui_commonmark = "0.22"
 regex = "1.12"
 ron = "0.12.0"

@@ -2,6 +2,12 @@ pub mod app;
 pub mod graph;
 pub mod syntax;
 pub mod parser;
+pub mod types;
+pub mod utils;
+pub mod persistence;
+pub mod lua;
+pub mod actions;
+pub mod ui;
 
 pub use app::LogMarkApp;
 

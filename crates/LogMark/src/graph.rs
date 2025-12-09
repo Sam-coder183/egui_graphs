@@ -11,6 +11,7 @@ pub struct LogNodeData {
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default)]
 pub struct LogEdgeData {
     pub label: Option<String>,
+    pub cardinality: Option<String>,
 }
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -72,7 +73,9 @@ impl DisplayNode<LogNodeData, LogEdgeData, Directed, u32> for LogNode {
             stroke,
         }.into());
 
-        let font_size = (screen_radius * 0.4).max(8.0).min(16.0);
+        // Scale text with zoom, but keep it legible
+        // Increased base scale and minimum size for better readability
+        let font_size = (screen_radius * 0.6).max(14.0).min(60.0);
         let galley = ctx.ctx.fonts_mut(|f| {
             f.layout_no_wrap(
                 self.label.clone(),
@@ -103,6 +106,7 @@ impl DisplayNode<LogNodeData, LogEdgeData, Directed, u32> for LogNode {
 pub struct LogEdge {
     pub selected: bool,
     pub label: Option<String>,
+    pub cardinality: Option<String>,
 }
 
 impl From<EdgeProps<LogEdgeData>> for LogEdge {
@@ -110,6 +114,7 @@ impl From<EdgeProps<LogEdgeData>> for LogEdge {
         Self {
             selected: edge_props.selected,
             label: edge_props.payload.label.clone(),
+            cardinality: edge_props.payload.cardinality.clone(),
         }
     }
 }
@@ -181,13 +186,27 @@ impl DisplayEdge<LogNodeData, LogEdgeData, Directed, u32, LogNode> for LogEdge {
         // Label
         if let Some(text) = &self.label {
             let mid = screen_start + (screen_end - screen_start) * 0.5;
-            // Offset "up" (perpendicular)
-            let text_pos = mid - screen_perp * 15.0;
+            
+            // Dynamic font size based on zoom
+            // Base size 14.0, scaled by zoom, clamped for sanity
+            let font_size = ctx.meta.canvas_to_screen_size(14.0).max(12.0).min(40.0);
+            
+            // Calculate angle for rotation
+            let angle = screen_dir.y.atan2(screen_dir.x);
+            // Ensure text is always readable (not upside down)
+            let (angle, offset_dir) = if angle.abs() > std::f32::consts::FRAC_PI_2 {
+                (angle + std::f32::consts::PI, -screen_perp)
+            } else {
+                (angle, screen_perp)
+            };
+
+            // Offset "up" (perpendicular) based on font size
+            let text_pos = mid - offset_dir * (font_size + 5.0);
             
             let galley = ctx.ctx.fonts_mut(|f| {
                 f.layout_no_wrap(
                     text.clone(),
-                    FontId::new(10.0, FontFamily::Proportional),
+                    FontId::new(font_size, FontFamily::Proportional),
                     Color32::LIGHT_GRAY,
                 )
             });
@@ -197,9 +216,68 @@ impl DisplayEdge<LogNodeData, LogEdgeData, Directed, u32, LogNode> for LogEdge {
             
             // Add a small background for readability
             let bg_rect = galley.rect.translate(centered_pos.to_vec2()).expand(2.0);
-            shapes.push(egui::epaint::Shape::rect_filled(bg_rect, 2.0, Color32::from_black_alpha(150)));
+            
+            // Rotate the background rect manually if needed, but for now just drawing it axis-aligned 
+            // might look weird if rotated. 
+            // Better to use TextShape with rotation.
+            
+            // Since we can't easily rotate a rect_filled without a mesh, let's skip the background for rotated text
+            // or use a simpler approach.
+            
+            let mut text_shape = egui::epaint::TextShape::new(text_pos, galley, Color32::LIGHT_GRAY);
+            text_shape.angle = angle;
+            
+            // We need to adjust position because rotation happens around the pos.
+            // TextShape draws starting at pos. We want to center it.
+            // But TextShape doesn't support centering with rotation easily unless we manually offset.
+            // Actually, galley has size.
+            
+            // Let's try to position it such that it centers.
+            // If we rotate around text_pos, we need to offset by half width/height in the rotated frame.
+            let half_size = text_shape.galley.size() / 2.0;
+            let rotated_offset = Vec2::new(
+                half_size.x * angle.cos() - half_size.y * angle.sin(),
+                half_size.x * angle.sin() + half_size.y * angle.cos()
+            );
+            text_shape.pos = text_pos - rotated_offset;
 
-            shapes.push(egui::epaint::TextShape::new(centered_pos, galley, Color32::LIGHT_GRAY).into());
+            shapes.push(text_shape.into());
+        }
+
+        // Cardinality
+        if let Some(card) = &self.cardinality {
+            let mid = screen_start + (screen_end - screen_start) * 0.5;
+            let font_size = ctx.meta.canvas_to_screen_size(12.0).max(10.0).min(30.0);
+            
+            let angle = screen_dir.y.atan2(screen_dir.x);
+            let (angle, offset_dir) = if angle.abs() > std::f32::consts::FRAC_PI_2 {
+                (angle + std::f32::consts::PI, -screen_perp)
+            } else {
+                (angle, screen_perp)
+            };
+
+            // Offset "down" (opposite to label)
+            let text_pos = mid + offset_dir * (font_size + 5.0);
+            
+            let galley = ctx.ctx.fonts_mut(|f| {
+                f.layout_no_wrap(
+                    card.clone(),
+                    FontId::new(font_size, FontFamily::Proportional),
+                    Color32::from_rgb(150, 200, 255),
+                )
+            });
+            
+            let mut text_shape = egui::epaint::TextShape::new(text_pos, galley, Color32::from_rgb(150, 200, 255));
+            text_shape.angle = angle;
+            
+            let half_size = text_shape.galley.size() / 2.0;
+            let rotated_offset = Vec2::new(
+                half_size.x * angle.cos() - half_size.y * angle.sin(),
+                half_size.x * angle.sin() + half_size.y * angle.cos()
+            );
+            text_shape.pos = text_pos - rotated_offset;
+
+            shapes.push(text_shape.into());
         }
 
         shapes
@@ -208,5 +286,6 @@ impl DisplayEdge<LogNodeData, LogEdgeData, Directed, u32, LogNode> for LogEdge {
     fn update(&mut self, state: &EdgeProps<LogEdgeData>) {
         self.selected = state.selected;
         self.label = state.payload.label.clone();
+        self.cardinality = state.payload.cardinality.clone();
     }
 }
