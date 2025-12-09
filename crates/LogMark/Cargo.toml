@@ -29,6 +29,10 @@ rfd = "0.16.0"
 sublime_fuzzy = "0.7.0"
 log = "0.4"
 webbrowser = "1.0.6"
+egui_code_editor = "0.2.20"
+tree-sitter-markdown = "0.7.1"
+tree-sitter-lua = "0.2.0"
+tree-sitter = "0.19.5"
 
 # WASM dependencies (only for wasm32 target)
 [target.'cfg(target_arch = "wasm32")'.dependencies]

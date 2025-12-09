@@ -1,5 +1,7 @@
 pub mod app;
 pub mod graph;
+pub mod syntax;
+pub mod parser;
 
 pub use app::LogMarkApp;
 

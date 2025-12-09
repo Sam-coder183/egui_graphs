@@ -26,11 +26,14 @@ use petgraph::{stable_graph::StableGraph, Directed};
 use petgraph::visit::EdgeRef;
 use petgraph::visit::IntoEdgeReferences;
 use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
+use egui_code_editor::{CodeEditor, ColorTheme, Completer};
 use regex::Regex;
 use ron::de::from_str;
 use ron::ser::{to_string_pretty, PrettyConfig};
 
 use crate::graph::{LogNode, LogEdge, LogNodeData, LogEdgeData};
+use crate::parser::MarkdownParser;
+use crate::syntax;
 
 #[derive(PartialEq)]
 enum AppLayout {
@@ -66,6 +69,10 @@ pub struct LogMarkApp {
     slash_menu_pos: Option<egui::Pos2>,
     slash_menu_selection: usize,
     
+    // Parser
+    parser: MarkdownParser,
+    completer: Completer,
+
     // Lua
     lua_sidebar_open: bool,
     lua_output: String,
@@ -515,6 +522,8 @@ impl LogMarkApp {
             slash_menu_query: String::new(),
             slash_menu_pos: None,
             slash_menu_selection: 0,
+            parser: MarkdownParser::new(),
+            completer: Completer::new_with_syntax(&syntax::markdown()).with_user_words(),
             lua_sidebar_open: false,
             lua_output: String::new(),
             lua_variables: Vec::new(),
@@ -585,13 +594,20 @@ impl LogMarkApp {
     fn handle_wikilinks(&mut self, node_idx: petgraph::stable_graph::NodeIndex) {
         let content = self.graph.node(node_idx).unwrap().payload().content.clone();
         
-        // 1. Parse current wikilinks from content
+        // 1. Parse current wikilinks from content using Tree-sitter to exclude code blocks
         let mut current_links = std::collections::HashMap::new();
-        for cap in self.wikilink_regex.captures_iter(&content) {
-            if let Some(m) = cap.get(1) {
-                let target_label = m.as_str().to_string();
-                let edge_label = cap.get(2).map(|m| m.as_str().to_string()).unwrap_or_else(|| "links to".to_string());
-                current_links.insert(target_label, edge_label);
+        
+        // Get safe ranges (not code blocks)
+        let safe_ranges = self.parser.get_safe_ranges(&content);
+        
+        for range in safe_ranges {
+            let slice = &content[range];
+            for cap in self.wikilink_regex.captures_iter(slice) {
+                if let Some(m) = cap.get(1) {
+                    let target_label = m.as_str().to_string();
+                    let edge_label = cap.get(2).map(|m| m.as_str().to_string()).unwrap_or_else(|| "links to".to_string());
+                    current_links.insert(target_label, edge_label);
+                }
             }
         }
 
@@ -643,6 +659,7 @@ impl LogMarkApp {
                 }
             }
 
+            // Create node if it doesn't exist (only when fully typed as a valid wikilink)
             let target_idx = match target_idx {
                 Some(idx) => idx,
                 None => {
@@ -1013,7 +1030,7 @@ impl LogMarkApp {
             let after_query: String = chars.iter().skip(remove_end).collect();
             
             // Check if / was at start of line (for conditional behavior)
-            let is_at_line_start = slash_pos == 0 || 
+            let _is_at_line_start = slash_pos == 0 || 
                 (slash_pos > 0 && chars.get(slash_pos - 1) == Some(&'\n'));
             
             // Find where the cursor should be placed (marked by '|' in template)
@@ -1791,22 +1808,22 @@ impl App for LogMarkApp {
                             
                             // Main text editor
                             let available_height = ui.available_height() - 60.0;
-                            let editor_id = egui::Id::new("content_editor").with(idx);
+                            // let editor_id = egui::Id::new("content_editor").with(idx);
                             
                             egui::ScrollArea::vertical().max_height(available_height.max(200.0)).show(ui, |ui| {
-                                let response = ui.add(
-                                    TextEdit::multiline(&mut self.content_edit_buffer)
-                                        .id(editor_id)
-                                        .desired_width(f32::INFINITY)
-                                        .font(egui::TextStyle::Monospace)
-                                        .frame(true)
-                                );
+                                let response = CodeEditor::default()
+                                    .id_source(format!("content_editor_{}", idx.index()))
+                                    .with_syntax(syntax::markdown())
+                                    .with_fontsize(14.0)
+                                    .with_theme(ColorTheme::GRUVBOX)
+                                    .show_with_completer(ui, &mut self.content_edit_buffer, &mut self.completer)
+                                    .response;
                                 
                                 // Detect slash key press and open menu
                                 // Only process changes if this is a real user edit, not just syncing to a new node
                                 if response.changed() && !just_synced {
                                     // Check if user just typed '/'
-                                    if let Some(state) = TextEdit::load_state(ui.ctx(), editor_id) {
+                                    if let Some(state) = TextEdit::load_state(ui.ctx(), response.id) {
                                         if let Some(range) = state.cursor.char_range() {
                                             let cursor_idx = range.primary.index;
                                             self.cursor_position = cursor_idx;
@@ -1817,7 +1834,12 @@ impl App for LogMarkApp {
                                                 if cursor_idx <= chars.len() && chars.get(cursor_idx - 1) == Some(&'/') {
                                                     // Check it's at start of line or after whitespace
                                                     let prev_char = if cursor_idx >= 2 { chars.get(cursor_idx - 2) } else { None };
-                                                    if prev_char.is_none() || prev_char == Some(&'\n') || prev_char.map(|c| c.is_whitespace()) == Some(true) {
+                                                    let is_valid_trigger = prev_char.is_none() || prev_char == Some(&'\n') || prev_char.map(|c| c.is_whitespace()) == Some(true);
+                                                    
+                                                    // Also check we are NOT in a code block
+                                                    let is_in_code = self.parser.is_in_code_block(&self.content_edit_buffer, cursor_idx);
+                                                    
+                                                    if is_valid_trigger && !is_in_code {
                                                         self.slash_menu_open = true;
                                                         self.slash_menu_selection = 0;
                                                         self.slash_menu_query.clear();
@@ -1851,7 +1873,8 @@ impl App for LogMarkApp {
                                                 }
                                             }
                                             
-                                            // Auto-completion for [[
+                                            // Auto-completion for [[ - REMOVED to prevent premature node creation
+                                            /*
                                             if cursor_idx >= 2 {
                                                 let chars: Vec<char> = self.content_edit_buffer.chars().collect();
                                                 if chars.get(cursor_idx.saturating_sub(2)..cursor_idx) == Some(&['[', '[']) {
@@ -1865,6 +1888,7 @@ impl App for LogMarkApp {
                                                     }
                                                 }
                                             }
+                                            */
                                         }
                                     }
                                     

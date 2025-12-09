@@ -5,8 +5,8 @@
                 id: Some(0),
                 props: (
                     payload: (
-                        label: "Start Here",
-                        content: "# Start Here\n\nThis is your new graph. Double-click to edit this node, or use the Quick Add panel on the left to create more nodes.\n\nTry typing `/` in the edit tab to see the slash menu!\n\n[[nuevo]]",
+                        label: "LogMark",
+                        content: "# LogMark\n\nWelcome to LogMark, a graph-based note app.\n\nBrowse nodes to learn features. Select a node to edit on the right.",
                     ),
                     label: "node 0",
                     selected: false,
@@ -14,16 +14,16 @@
                     hovered: false,
                     color: None,
                     location: (
-                        x: -451.16946,
-                        y: 71.029686,
+                        x: 0.0,
+                        y: 0.0,
                     ),
                 ),
                 display: (
                     pos: (
-                        x: -451.16946,
-                        y: 71.029686,
+                        x: 0.0,
+                        y: 0.0,
                     ),
-                    label: "Start Here",
+                    label: "LogMark",
                     selected: false,
                     dragged: false,
                     hovered: false,
@@ -35,8 +35,8 @@
                 id: Some(1),
                 props: (
                     payload: (
-                        label: "",
-                        content: "# ",
+                        label: "Auto-Commit",
+                        content: "# Auto-Commit\n\nEdits increment a counter; after 10 the app auto-commits.\nYou can keep typing—commits are automatic.",
                     ),
                     label: "node 1",
                     selected: false,
@@ -44,16 +44,16 @@
                     hovered: false,
                     color: None,
                     location: (
-                        x: -64.03998,
-                        y: 788.87256,
+                        x: 150.0,
+                        y: -70.0,
                     ),
                 ),
                 display: (
                     pos: (
-                        x: -64.03998,
-                        y: 788.87256,
+                        x: 150.0,
+                        y: -70.0,
                     ),
-                    label: "",
+                    label: "Auto-Commit",
                     selected: false,
                     dragged: false,
                     hovered: false,
@@ -65,26 +65,26 @@
                 id: Some(2),
                 props: (
                     payload: (
-                        label: "n",
-                        content: "# n",
+                        label: "Layouts",
+                        content: "# Layouts\n\nSwitch layouts from the left Options bar.\n- Random: scattered.\n- Force: physics.\n- Hierarchical: tree view to fill the screen.\n\n\n [[nuevo]]",
                     ),
                     label: "node 2",
-                    selected: false,
+                    selected: true,
                     dragged: false,
                     hovered: false,
                     color: None,
                     location: (
-                        x: -1266.4034,
-                        y: 47.37293,
+                        x: 153.07426,
+                        y: 72.177704,
                     ),
                 ),
                 display: (
                     pos: (
-                        x: -1266.4034,
-                        y: 47.37293,
+                        x: 153.07426,
+                        y: 72.177704,
                     ),
-                    label: "n",
-                    selected: false,
+                    label: "Layouts",
+                    selected: true,
                     dragged: false,
                     hovered: false,
                     radius: 30.0,
@@ -95,8 +95,8 @@
                 id: Some(3),
                 props: (
                     payload: (
-                        label: "nu",
-                        content: "# nu",
+                        label: "Relationships",
+                        content: "# Relationships\n\nEdges show labels above arrows.\nUse [[WikiLinks]] or the slash menu to connect notes.",
                     ),
                     label: "node 3",
                     selected: false,
@@ -104,16 +104,16 @@
                     hovered: false,
                     color: None,
                     location: (
-                        x: -879.2749,
-                        y: 765.21454,
+                        x: -150.0,
+                        y: -50.0,
                     ),
                 ),
                 display: (
                     pos: (
-                        x: -879.2749,
-                        y: 765.21454,
+                        x: -150.0,
+                        y: -50.0,
                     ),
-                    label: "nu",
+                    label: "Relationships",
                     selected: false,
                     dragged: false,
                     hovered: false,
@@ -125,8 +125,8 @@
                 id: Some(4),
                 props: (
                     payload: (
-                        label: "nue",
-                        content: "# nue",
+                        label: "Slash Menu",
+                        content: "# Slash Menu\n\nType `/` to open. Navigate with ↑/↓. Press Enter or Tab to accept. Options: headings, Lua block, or link to another node.",
                     ),
                     label: "node 4",
                     selected: false,
@@ -134,16 +134,16 @@
                     hovered: false,
                     color: None,
                     location: (
-                        x: -838.3008,
-                        y: -646.81195,
+                        x: -150.0,
+                        y: 60.0,
                     ),
                 ),
                 display: (
                     pos: (
-                        x: -838.3008,
-                        y: -646.81195,
+                        x: -150.0,
+                        y: 60.0,
                     ),
-                    label: "nue",
+                    label: "Slash Menu",
                     selected: false,
                     dragged: false,
                     hovered: false,
@@ -155,8 +155,8 @@
                 id: Some(5),
                 props: (
                     payload: (
-                        label: "nuev",
-                        content: "# nuev",
+                        label: "Lua",
+                        content: "# Lua Integration\n\nLogMark supports Lua scripting for dynamic content.\n\n## Usage\nCreate a code block with `lua` language:\n\n```lua\n-- Example\nlocal x = 10\nprint(\'Value:\', x)\ngraph.add_node(\'New Node\')\n```\n\n## Features\n- **Run**: Execute the script.\n- **Debug**: Inspect variables in the left sidebar.\n- **API**:\n  - `print(val)`: Print to output.\n  - `graph.add_node(\'label\')`: Create a node.\n  - `graph.add_edge(\'from\', \'to\', \'label\')`: Connect nodes.\n  - `graph.list_nodes()`: List all nodes.",
                     ),
                     label: "node 5",
                     selected: false,
@@ -164,16 +164,16 @@
                     hovered: false,
                     color: None,
                     location: (
-                        x: -23.064928,
-                        y: -623.1563,
+                        x: 40.0,
+                        y: 170.0,
                     ),
                 ),
                 display: (
                     pos: (
-                        x: -23.064928,
-                        y: -623.1563,
+                        x: 40.0,
+                        y: 170.0,
                     ),
-                    label: "nuev",
+                    label: "Lua",
                     selected: false,
                     dragged: false,
                     hovered: false,
@@ -185,26 +185,26 @@
                 id: Some(6),
                 props: (
                     payload: (
-                        label: "nuevo",
-                        content: "# nuevo\n\nTODO ",
+                        label: "Hierarchy",
+                        content: "# Hierarchy\n\nHierarchical layout provides a node tree view that can fill the screen.",
                     ),
                     label: "node 6",
-                    selected: true,
+                    selected: false,
                     dragged: false,
                     hovered: false,
                     color: None,
                     location: (
-                        x: 364.06525,
-                        y: 94.68673,
+                        x: 220.0,
+                        y: 180.0,
                     ),
                 ),
                 display: (
                     pos: (
-                        x: 364.06525,
-                        y: 94.68673,
+                        x: 220.0,
+                        y: 180.0,
                     ),
-                    label: "nuevo",
-                    selected: true,
+                    label: "Hierarchy",
+                    selected: false,
                     dragged: false,
                     hovered: false,
                     radius: 30.0,
@@ -219,11 +219,11 @@
                 id: Some(0),
                 display: (
                     selected: false,
-                    label: Some("links to"),
+                    label: Some("explains"),
                 ),
                 props: (
                     payload: (
-                        label: Some("links to"),
+                        label: Some("explains"),
                     ),
                     order: 0,
                     selected: false,
@@ -235,11 +235,11 @@
                 id: Some(1),
                 display: (
                     selected: false,
-                    label: Some("links to"),
+                    label: Some("shows"),
                 ),
                 props: (
                     payload: (
-                        label: Some("links to"),
+                        label: Some("shows"),
                     ),
                     order: 0,
                     selected: false,
@@ -251,11 +251,11 @@
                 id: Some(2),
                 display: (
                     selected: false,
-                    label: Some("links to"),
+                    label: Some("details"),
                 ),
                 props: (
                     payload: (
-                        label: Some("links to"),
+                        label: Some("details"),
                     ),
                     order: 0,
                     selected: false,
@@ -267,11 +267,11 @@
                 id: Some(3),
                 display: (
                     selected: false,
-                    label: Some("links to"),
+                    label: Some("includes"),
                 ),
                 props: (
                     payload: (
-                        label: Some("links to"),
+                        label: Some("includes"),
                     ),
                     order: 0,
                     selected: false,
@@ -283,11 +283,11 @@
                 id: Some(4),
                 display: (
                     selected: false,
-                    label: Some("links to"),
+                    label: Some("supports"),
                 ),
                 props: (
                     payload: (
-                        label: Some("links to"),
+                        label: Some("supports"),
                     ),
                     order: 0,
                     selected: false,
@@ -299,11 +299,11 @@
                 id: Some(5),
                 display: (
                     selected: false,
-                    label: Some("links to"),
+                    label: Some("adds"),
                 ),
                 props: (
                     payload: (
-                        label: Some("links to"),
+                        label: Some("adds"),
                     ),
                     order: 0,
                     selected: false,
@@ -311,22 +311,55 @@
                 ),
                 _marker: (),
             ))),
+            Some((4, 3, (
+                id: Some(6),
+                display: (
+                    selected: false,
+                    label: Some("creates"),
+                ),
+                props: (
+                    payload: (
+                        label: Some("creates"),
+                    ),
+                    order: 0,
+                    selected: false,
+                    label: "edge 6",
+                ),
+                _marker: (),
+            ))),
+            None,
+            Some((5, 3, (
+                id: Some(8),
+                display: (
+                    selected: false,
+                    label: Some("annotates"),
+                ),
+                props: (
+                    payload: (
+                        label: Some("annotates"),
+                    ),
+                    order: 0,
+                    selected: false,
+                    label: "edge 8",
+                ),
+                _marker: (),
+            ))),
         ],
     ),
     selected_nodes: [
-        6,
+        2,
     ],
     selected_edges: [],
     dragged_node: None,
     hovered_node: None,
     bounds: (
         min: (
-            x: -1296.4034,
-            y: -676.81195,
+            x: -180.0,
+            y: -100.0,
         ),
         max: (
-            x: 394.06525,
-            y: 818.87256,
+            x: 250.0,
+            y: 210.0,
         ),
     ),
 )
