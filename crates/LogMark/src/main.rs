@@ -1,10 +1,9 @@
 // Native-only binary - not compiled for WASM
-#![cfg(not(target_arch = "wasm32"))]
-
-use LogMark::LogMarkApp;
-use eframe::NativeOptions;
-
+#[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
+    use logmark::LogMarkApp;
+    use eframe::NativeOptions;
+
     let native_options = NativeOptions::default();
     eframe::run_native(
         "LogMark",
@@ -12,3 +11,6 @@ fn main() -> eframe::Result<()> {
         Box::new(|cc| Ok(Box::new(LogMarkApp::new(cc)))),
     )
 }
+
+#[cfg(target_arch = "wasm32")]
+fn main() {}

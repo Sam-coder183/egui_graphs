@@ -1,6 +1,7 @@
 use eframe::egui::{self, Color32, Pos2, Rect, Vec2};
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::collections::VecDeque;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
@@ -135,25 +136,66 @@ impl PlaylistState {
 
 // Audio logic moved to `src/audio.rs`.
 
-// Configuration for visualizer
+// Snapshot of state for motion blur/trails
 #[derive(Clone)]
-pub struct VisualizerConfig {
-    // Base fractal parameters
+pub struct FrameState {
+    pub audio: AudioAnalysis,
+    pub rotation: f32,
+    pub time: f64,
+}
+
+// Configuration for a single fractal tree
+#[derive(Clone)]
+pub struct TreeConfig {
+    pub name: String,
     pub base_zoom: f32,
     pub base_width: f32,
     pub base_depth: u32,
     pub base_brightness: f32,
-    
-    // Audio reactivity multipliers
     pub zoom_bass_mult: f32,
     pub width_bass_mult: f32,
     pub depth_complexity_mult: f32,
     pub brightness_treble_mult: f32,
-    pub rotation_beat_mult: f32,
+    pub angle_offset: f32,
+    pub frequency_band: Option<usize>,
+    pub origin_offset: Vec2,
+    pub pseudo_3d: bool,
+    pub tilt_x: f32,
+    pub tilt_y: f32,
+}
+
+impl Default for TreeConfig {
+    fn default() -> Self {
+        Self {
+            name: "Main Tree".to_string(),
+            base_zoom: 0.3,
+            base_width: 1.0,
+            base_depth: 16,
+            base_brightness: 0.8,
+            zoom_bass_mult: 0.1,
+            width_bass_mult: 0.3,
+            depth_complexity_mult: 4.0,
+            brightness_treble_mult: 0.4,
+            angle_offset: 0.0,
+            frequency_band: None,
+            origin_offset: Vec2::ZERO,
+            pseudo_3d: false,
+            tilt_x: 0.0,
+            tilt_y: 0.0,
+        }
+    }
+}
+
+// Configuration for visualizer
+#[derive(Clone)]
+pub struct VisualizerConfig {
+    // Trees
+    pub trees: Vec<TreeConfig>,
     
     // Animation
     pub auto_rotate: bool,
     pub rotation_speed: f32,
+    pub rotation_beat_mult: f32,
     pub pulse_on_beat: bool,
     pub color_cycle: bool,
     pub color_cycle_speed: f32,
@@ -164,6 +206,33 @@ pub struct VisualizerConfig {
     pub background_color: Color32,
     pub glow_intensity: f32,
     pub particle_count: u32,
+    
+    // Sparkle Settings
+    pub sparkle_count_on_beat: u32,
+    pub sparkle_spawn_mode: SparkleSpawnMode,
+    pub sparkle_radius: f32,
+    pub sparkle_polygon_sides: u32,
+    pub sparkle_size_min: f32,
+    pub sparkle_size_max: f32,
+    pub sparkle_speed_min: f32,
+    pub sparkle_speed_max: f32,
+    pub sparkle_grid_dims: Vec2, // X, Y spacing
+    pub sparkle_min_dist: f32,
+    
+    // Continuous Sparkles
+    pub sparkle_always_on: bool,
+    pub sparkle_spawn_rate: f32, // Particles per second
+    pub sparkle_life_min: f32,
+    pub sparkle_life_max: f32,
+    pub sparkle_alpha_min: f32,
+    pub sparkle_alpha_max: f32,
+    
+    // Blur / Trails
+    pub blur_enabled: bool,
+    pub blur_samples: usize, // Number of past frames to draw
+    pub blur_opacity: f32,   // Opacity of trails
+    pub blur_depth_reduction: u32, // Reduce recursion depth for trails
+    
     // Unknown Pleasures visualizer parameters
     pub up_line_thickness: f32,
     pub up_perspective: f32,
@@ -186,20 +255,42 @@ pub struct VisualizerConfig {
 
 impl Default for VisualizerConfig {
     fn default() -> Self {
-        Self {
-            base_zoom: 0.1,
-            base_width: 1.0,
-            base_depth: 16,
-            base_brightness: 0.8,
+        // Create a default forest layout
+        let trees = {
+            let mut t = Vec::new();
             
-            zoom_bass_mult: 0.1,
-            width_bass_mult: 0.3,
-            depth_complexity_mult: 4.0,
-            brightness_treble_mult: 0.4,
-            rotation_beat_mult: 0.1,
+            // Central tree
+            let mut t1 = TreeConfig::default();
+            t1.name = "Center Tree".to_string();
+            t.push(t1);
+            
+            // Surrounding trees to cover the screen
+            let offsets = [
+                (Vec2::new(-350.0, -250.0), 45.0, "Top Left"),
+                (Vec2::new(350.0, -250.0), -45.0, "Top Right"),
+                (Vec2::new(-350.0, 250.0), 135.0, "Bottom Left"),
+                (Vec2::new(350.0, 250.0), -135.0, "Bottom Right"),
+                (Vec2::new(-400.0, 0.0), 90.0, "Left"),
+                (Vec2::new(400.0, 0.0), -90.0, "Right"),
+            ];
+
+            for (pos, angle, name) in offsets {
+                let mut tree = TreeConfig::default();
+                tree.name = name.to_string();
+                tree.origin_offset = pos;
+                tree.base_zoom = 0.25; // Slightly smaller than center
+                tree.angle_offset = angle;
+                t.push(tree);
+            }
+            t
+        };
+
+        Self {
+            trees,
             
             auto_rotate: true,
             rotation_speed: 1.0,
+            rotation_beat_mult: 0.1,
             pulse_on_beat: true,
             color_cycle: true,
             color_cycle_speed: 0.1,
@@ -209,6 +300,30 @@ impl Default for VisualizerConfig {
             background_color: Color32::from_rgb(10, 10, 20),
             glow_intensity: 0.5,
             particle_count: 50,
+            
+            sparkle_count_on_beat: 5,
+            sparkle_spawn_mode: SparkleSpawnMode::RandomArea,
+            sparkle_radius: 200.0,
+            sparkle_polygon_sides: 5,
+            sparkle_size_min: 2.0,
+            sparkle_size_max: 8.0,
+            sparkle_speed_min: 100.0,
+            sparkle_speed_max: 300.0,
+            sparkle_grid_dims: Vec2::new(50.0, 50.0),
+            sparkle_min_dist: 30.0,
+            
+            sparkle_always_on: true,
+            sparkle_spawn_rate: 20.0,
+            sparkle_life_min: 0.5,
+            sparkle_life_max: 1.5,
+            sparkle_alpha_min: 0.5,
+            sparkle_alpha_max: 1.0,
+            
+            blur_enabled: false,
+            blur_samples: 5,
+            blur_opacity: 0.3,
+            blur_depth_reduction: 2,
+            
             up_line_thickness: 1.5,
             up_perspective: 0.6,
             up_vertical_scale: 1.0,
@@ -258,40 +373,43 @@ impl Default for VisualizerConfig {
 
         /// Reset only the fractal-related parameters to their default values
         pub fn reset_fractal_to_default(&mut self) {
-        let d = VisualizerConfig::default();
-        self.base_zoom = d.base_zoom;
-        self.base_width = d.base_width;
-        self.base_depth = d.base_depth;
-        self.base_brightness = d.base_brightness;
-
-        self.zoom_bass_mult = d.zoom_bass_mult;
-        self.width_bass_mult = d.width_bass_mult;
-        self.depth_complexity_mult = d.depth_complexity_mult;
-        self.brightness_treble_mult = d.brightness_treble_mult;
-        self.rotation_beat_mult = d.rotation_beat_mult;
+            self.trees = VisualizerConfig::default().trees;
+        }
     }
-}
 
 // Particle for beat effects
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ParticleShape {
+    Circle,
+    Square,
+    Triangle,
+    Star,
+    Hexagon,
+}
+
 #[derive(Clone)]
-struct Particle {
-    pos: Pos2,
-    vel: Vec2,
-    life: f32,
-    max_life: f32,
-    size: f32,
-    color: Color32,
+pub(crate) struct Particle {
+    pub(crate) pos: Vec2, // Offset from center
+    pub(crate) vel: Vec2,
+    pub(crate) life: f32,
+    pub(crate) max_life: f32,
+    pub(crate) size: f32,
+    pub(crate) color: Color32,
+    pub(crate) max_alpha: f32,
+    pub(crate) shape: ParticleShape,
 }
 
 impl Particle {
-    fn new(center: Pos2, angle: f32, speed: f32, color: Color32) -> Self {
+    fn new(offset: Vec2, angle: f32, speed: f32, size: f32, color: Color32, life: f32, max_alpha: f32, shape: ParticleShape) -> Self {
         Self {
-            pos: center,
+            pos: offset,
             vel: Vec2::new(angle.cos() * speed, angle.sin() * speed),
-            life: 1.0,
-            max_life: 1.0,
-            size: 3.0 + rand_float() * 5.0,
+            life,
+            max_life: life,
+            size,
             color,
+            max_alpha,
+            shape,
         }
     }
     
@@ -326,6 +444,23 @@ fn rand_float() -> f32 {
 
 // Web audio types and initialization moved to `src/audio.rs`.
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum SparkleSpawnMode {
+    Point,
+    RandomArea,
+    Grid,
+    Circle,
+    Polygon,
+    TreeOrigins,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum SettingsTab {
+    Trees,
+    Sparkles,
+    Blur,
+}
+
 // Main visualizer app
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum VisualizerMode {
@@ -343,6 +478,8 @@ pub struct MusicVisualizerApp {
     time: f64,
     rotation: f32,
     particles: Vec<Particle>,
+    history: VecDeque<FrameState>,
+    last_screen_rect: Rect,
     
     // Audio data shared with JS callback
     audio_data: Rc<RefCell<(Vec<u8>, Vec<u8>)>>,
@@ -362,6 +499,9 @@ pub struct MusicVisualizerApp {
     show_waveform: bool,
     show_settings: bool,
     beat_flash: f32,
+    selected_tree_index: usize,
+    edit_all_trees: bool,
+    settings_tab: SettingsTab,
     // Option: when switching back to Fractal, reset fractal params to defaults
     restore_fractal_on_back: bool,
     // Current visualizer mode
@@ -385,6 +525,8 @@ impl Default for MusicVisualizerApp {
             time: 0.0,
             rotation: 0.0,
             particles: Vec::new(),
+            history: VecDeque::new(),
+            last_screen_rect: Rect::from_min_size(Pos2::ZERO, Vec2::new(800.0, 600.0)),
             audio_data: Rc::new(RefCell::new((vec![0u8; 256], vec![0u8; 256]))),
             audio_initialized: Rc::new(RefCell::new(false)),
             playlist: PlaylistState::default(),
@@ -398,6 +540,9 @@ impl Default for MusicVisualizerApp {
             show_waveform: true,
             show_settings: true,
             beat_flash: 0.0,
+            selected_tree_index: 0,
+            edit_all_trees: false,
+            settings_tab: SettingsTab::Trees,
             restore_fractal_on_back: false,
             visualizer_mode: VisualizerMode::Fractal,
             unknown_visualizer: UnknownPleasuresVisualizer::new(),
@@ -456,6 +601,31 @@ impl MusicVisualizerApp {
         }
         self.beat_flash *= 0.9_f32.powf(dt * 60.0);
     }
+
+    pub fn get_band_amplitude(&self, band_idx: usize, total_bands: usize) -> f32 {
+        let freq_len = self.audio.frequency_data.len().max(1);
+        let f0 = (band_idx as f32) / (total_bands as f32);
+        let f1 = ((band_idx + 1) as f32) / (total_bands as f32);
+        // Use the same exponent as Unknown Pleasures for consistency, or a default
+        let exp = self.config.up_freq_curve_exponent.max(0.001);
+        
+        let idx0 = ((f0.powf(exp)) * (freq_len as f32)).floor() as usize;
+        let idx1 = ((f1.powf(exp)) * (freq_len as f32)).floor() as usize;
+        
+        let start = idx0.min(freq_len - 1);
+        let mut end = idx1.min(freq_len);
+        if end <= start { end = (start + 1).min(freq_len); }
+        
+        let mut sum = 0.0;
+        for i in start..end {
+            if i < self.audio.frequency_data.len() {
+                sum += self.audio.frequency_data[i] as f32;
+            }
+        }
+        
+        let count = (end - start).max(1) as f32;
+        (sum / count) / 255.0
+    }
     
     fn update_animation(&mut self, dt: f32) {
         self.time += dt as f64;
@@ -467,13 +637,142 @@ impl MusicVisualizerApp {
         }
         
         // Spawn particles on beat (disabled for Unknown Pleasures mode)
+        let mut spawn_count = 0;
         if self.audio.beat && self.config.pulse_on_beat && self.visualizer_mode != VisualizerMode::UnknownPleasures {
-            let center = Pos2::new(400.0, 300.0); // Will be updated in render
+            spawn_count += self.config.sparkle_count_on_beat;
+        }
+        
+        // Continuous sparkles
+        if self.config.sparkle_always_on && self.visualizer_mode != VisualizerMode::UnknownPleasures {
+            let spawn_chance = self.config.sparkle_spawn_rate * dt;
+            spawn_count += spawn_chance.floor() as u32 + if rand_float() < (spawn_chance % 1.0) { 1 } else { 0 };
+        }
+
+        if spawn_count > 0 {
+            // Use last_screen_rect center as base, but we store offsets in particles
+            // So 'center' here is just a reference point for calculation, but we want to store offset from screen center.
+            // Actually, let's store offset from screen center.
+            // The screen center is self.last_screen_rect.center().
+            
+            let screen_size = self.last_screen_rect.size();
+            
             let color = self.get_current_color();
-            for _ in 0..5 {
-                let angle = rand_float() * std::f32::consts::TAU;
-                let speed = 100.0 + rand_float() * 200.0;
-                self.particles.push(Particle::new(center, angle, speed, color));
+            
+            for i in 0..spawn_count {
+                let mut offset = Vec2::ZERO; // Default to center
+                let mut angle = rand_float() * std::f32::consts::TAU;
+                let speed = self.config.sparkle_speed_min + rand_float() * (self.config.sparkle_speed_max - self.config.sparkle_speed_min);
+                let size = self.config.sparkle_size_min + rand_float() * (self.config.sparkle_size_max - self.config.sparkle_size_min);
+                let life = self.config.sparkle_life_min + rand_float() * (self.config.sparkle_life_max - self.config.sparkle_life_min);
+                let max_alpha = self.config.sparkle_alpha_min + rand_float() * (self.config.sparkle_alpha_max - self.config.sparkle_alpha_min);
+                
+                // Random shape
+                let shape_idx = (rand_float() * 5.0) as u32;
+                let shape = match shape_idx {
+                    0 => ParticleShape::Circle,
+                    1 => ParticleShape::Square,
+                    2 => ParticleShape::Triangle,
+                    3 => ParticleShape::Star,
+                    _ => ParticleShape::Hexagon,
+                };
+                
+                match self.config.sparkle_spawn_mode {
+                    SparkleSpawnMode::Point => {
+                        // Just center (offset 0)
+                    },
+                    SparkleSpawnMode::RandomArea => {
+                        // Random position in full screen area
+                        offset = Vec2::new(
+                            (rand_float() - 0.5) * screen_size.x,
+                            (rand_float() - 0.5) * screen_size.y
+                        );
+                    },
+                    SparkleSpawnMode::Grid => {
+                        let grid_size = (spawn_count as f32).sqrt().ceil() as i32;
+                        let row = (i as i32) / grid_size;
+                        let col = (i as i32) % grid_size;
+                        
+                        let offset_x = (col as f32 - grid_size as f32 / 2.0) * self.config.sparkle_grid_dims.x;
+                        let offset_y = (row as f32 - grid_size as f32 / 2.0) * self.config.sparkle_grid_dims.y;
+                        
+                        offset = Vec2::new(offset_x, offset_y);
+                        angle = 0.0; 
+                    },
+                    SparkleSpawnMode::Circle => {
+                        let theta = rand_float() * std::f32::consts::TAU;
+                        let r = self.config.sparkle_radius;
+                        offset = Vec2::new(theta.cos() * r, theta.sin() * r);
+                        angle = theta; // Outward
+                    },
+                    SparkleSpawnMode::Polygon => {
+                        let sides = self.config.sparkle_polygon_sides.max(3);
+                        let side_idx = (rand_float() * sides as f32) as u32;
+                        let angle_per_side = std::f32::consts::TAU / sides as f32;
+                        let a1 = side_idx as f32 * angle_per_side;
+                        let a2 = (side_idx + 1) as f32 * angle_per_side;
+                        let t = rand_float(); // Position along edge
+                        
+                        let p1 = Vec2::new(a1.cos() * self.config.sparkle_radius, a1.sin() * self.config.sparkle_radius);
+                        let p2 = Vec2::new(a2.cos() * self.config.sparkle_radius, a2.sin() * self.config.sparkle_radius);
+                        
+                        offset = p1 + (p2 - p1) * t;
+                        angle = offset.angle();
+                    },
+                    SparkleSpawnMode::TreeOrigins => {
+                        if !self.config.trees.is_empty() {
+                            let tree_idx = (rand_float() * self.config.trees.len() as f32) as usize;
+                            if let Some(tree) = self.config.trees.get(tree_idx) {
+                                offset = tree.origin_offset;
+                            }
+                        }
+                    }
+                }
+
+                // Uniformity check (Poisson-disk-like rejection sampling)
+                if self.config.sparkle_min_dist > 0.0 {
+                    let mut valid = true;
+                    // Check against recent particles (optimization: only check last N)
+                    let check_count = 50.min(self.particles.len());
+                    for p in self.particles.iter().rev().take(check_count) {
+                        if (p.pos - offset).length() < self.config.sparkle_min_dist {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    
+                    if !valid {
+                        // Try to find a valid position a few times
+                        for _ in 0..5 {
+                            // Perturb position slightly to try to find a gap
+                            let perturb = Vec2::new(
+                                (rand_float() - 0.5) * self.config.sparkle_min_dist * 2.0,
+                                (rand_float() - 0.5) * self.config.sparkle_min_dist * 2.0
+                            );
+                            let new_offset = offset + perturb;
+                            
+                            let mut retry_valid = true;
+                            for p in self.particles.iter().rev().take(check_count) {
+                                if (p.pos - new_offset).length() < self.config.sparkle_min_dist {
+                                    retry_valid = false;
+                                    break;
+                                }
+                            }
+                            
+                            if retry_valid {
+                                offset = new_offset;
+                                valid = true;
+                                break;
+                            }
+                        }
+                        
+                        // If still not valid, skip spawning this particle
+                        if !valid {
+                            continue;
+                        }
+                    }
+                }
+
+                self.particles.push(Particle::new(offset, angle, speed, size, color, life, max_alpha, shape));
             }
         }
         
@@ -486,6 +785,21 @@ impl MusicVisualizerApp {
         // Limit particle count (config.particle_count is u32 now)
         while self.particles.len() > (self.config.particle_count as usize) * 2 {
             self.particles.remove(0);
+        }
+        
+        // Update history for blur
+        if self.config.blur_enabled {
+            self.history.push_front(FrameState {
+                audio: self.audio.clone(),
+                rotation: self.rotation,
+                time: self.time,
+            });
+            
+            while self.history.len() > self.config.blur_samples {
+                self.history.pop_back();
+            }
+        } else {
+            self.history.clear();
         }
     }
     
@@ -835,7 +1149,7 @@ impl MusicVisualizerApp {
             ui.separator();
             
             // Fractal settings (now accepts arbitrary numbers via DragValue)
-            ui.collapsing("🌿 Fractal Settings", |ui| {
+            ui.collapsing("🌿 Fractal & Sparkle Settings", |ui| {
                 if self.visualizer_mode == VisualizerMode::UnknownPleasures {
                     ui.label("Unknown Pleasures Visualizer Controls:");
                     ui.horizontal(|ui| {
@@ -865,27 +1179,450 @@ impl MusicVisualizerApp {
                         ui.add(egui::DragValue::new(&mut self.config.up_vertical_scale).speed(0.1));
                     });
                 } else {
+                    // Tab Selector
                     ui.horizontal(|ui| {
-                        ui.label("Zoom:");
-                        ui.add(egui::DragValue::new(&mut self.config.base_zoom).speed(0.01));
+                        ui.selectable_value(&mut self.settings_tab, SettingsTab::Trees, "🌲 Trees");
+                        ui.selectable_value(&mut self.settings_tab, SettingsTab::Sparkles, "✨ Sparkles");
+                        ui.selectable_value(&mut self.settings_tab, SettingsTab::Blur, "💨 Blur");
                     });
-                    ui.horizontal(|ui| {
-                        ui.label("Width:");
-                        ui.add(egui::DragValue::new(&mut self.config.base_width).speed(0.01));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("Depth:");
-                        ui.add(egui::DragValue::new(&mut self.config.base_depth).speed(1.0));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("Brightness:");
-                        ui.add(egui::DragValue::new(&mut self.config.base_brightness).speed(0.01));
-                    });
+                    ui.separator();
+
+                    match self.settings_tab {
+                        SettingsTab::Trees => {
+                            // Tree Management
+                            ui.horizontal(|ui| {
+                                ui.label("Select Tree:");
+                                let selected_name = self.config.trees.get(self.selected_tree_index).map(|t| t.name.clone()).unwrap_or_else(|| "None".to_string());
+                                egui::ComboBox::from_id_salt("tree_select")
+                                    .selected_text(selected_name)
+                                    .show_ui(ui, |ui| {
+                                        for (i, tree) in self.config.trees.iter().enumerate() {
+                                            ui.selectable_value(&mut self.selected_tree_index, i, &tree.name);
+                                        }
+                                    });
+                                
+                                if ui.button("➕ Add").clicked() {
+                                    let count = self.config.trees.len() + 1;
+                                    let mut new_tree = if self.edit_all_trees && !self.config.trees.is_empty() {
+                                        // Inherit from first tree if edit all is on
+                                        let mut t = self.config.trees[0].clone();
+                                        t.name = format!("Tree {}", count);
+                                        t
+                                    } else {
+                                        let mut t = TreeConfig::default();
+                                        t.name = format!("Tree {}", count);
+                                        t
+                                    };
+                                    
+                                    new_tree.frequency_band = Some((count - 1) % 16);
+                                    self.config.trees.push(new_tree);
+                                    
+                                    // Recalculate angles
+                                    let step = 360.0 / count as f32;
+                                    for (i, tree) in self.config.trees.iter_mut().enumerate() {
+                                        tree.angle_offset = i as f32 * step;
+                                    }
+                                    self.selected_tree_index = count - 1;
+                                }
+                                
+                                if self.config.trees.len() > 1 {
+                                     if ui.button("🗑").clicked() {
+                                         self.config.trees.remove(self.selected_tree_index);
+                                         if self.selected_tree_index >= self.config.trees.len() {
+                                             self.selected_tree_index = self.config.trees.len().saturating_sub(1);
+                                         }
+                                         // Recalculate angles
+                                         let count = self.config.trees.len();
+                                         if count > 0 {
+                                             let step = 360.0 / count as f32;
+                                             for (i, tree) in self.config.trees.iter_mut().enumerate() {
+                                                 tree.angle_offset = i as f32 * step;
+                                             }
+                                         }
+                                     }
+                                }
+                                
+                                ui.add_space(8.0);
+                                ui.toggle_value(&mut self.edit_all_trees, "Edit All Trees");
+                                
+                                if ui.button("🌲 Generate Random Forest").clicked() {
+                                    self.config.trees.clear();
+                                    let count = 10 + (rand_float() * 10.0) as usize;
+                                    for i in 0..count {
+                                        let mut t = TreeConfig::default();
+                                        t.name = format!("Tree {}", i + 1);
+                                        t.origin_offset = Vec2::new(
+                                            (rand_float() - 0.5) * 600.0,
+                                            (rand_float() - 0.5) * 400.0
+                                        );
+                                        t.base_zoom = 0.05 + rand_float() * 0.05;
+                                        t.angle_offset = rand_float() * 360.0;
+                                        t.frequency_band = Some(i % 16);
+                                        self.config.trees.push(t.clone());
+                                        // Add a second tree at same point (as requested)
+                                        let mut t2 = t.clone();
+                                        t2.name = format!("Tree {} (Pair)", i + 1);
+                                        t2.angle_offset += 180.0; // Mirror
+                                        self.config.trees.push(t2);
+                                    }
+                                    self.selected_tree_index = 0;
+                                }
+                            });
+                            
+                            ui.separator();
+                            
+                            if !self.config.trees.is_empty() {
+                                if self.selected_tree_index >= self.config.trees.len() {
+                                    self.selected_tree_index = 0;
+                                }
+                                
+                                // Capture current values from selected tree
+                                let mut name = self.config.trees[self.selected_tree_index].name.clone();
+                                let mut angle_offset = self.config.trees[self.selected_tree_index].angle_offset;
+                                let mut frequency_band = self.config.trees[self.selected_tree_index].frequency_band;
+                                let mut base_zoom = self.config.trees[self.selected_tree_index].base_zoom;
+                                let mut base_width = self.config.trees[self.selected_tree_index].base_width;
+                                let mut base_depth = self.config.trees[self.selected_tree_index].base_depth;
+                                let mut base_brightness = self.config.trees[self.selected_tree_index].base_brightness;
+                                let mut origin_offset = self.config.trees[self.selected_tree_index].origin_offset;
+                                let mut pseudo_3d = self.config.trees[self.selected_tree_index].pseudo_3d;
+                                let mut tilt_x = self.config.trees[self.selected_tree_index].tilt_x;
+                                let mut tilt_y = self.config.trees[self.selected_tree_index].tilt_y;
+
+                                if !self.edit_all_trees {
+                                    ui.horizontal(|ui| {
+                                        ui.label("Name:");
+                                        if ui.text_edit_singleline(&mut name).changed() {
+                                            self.config.trees[self.selected_tree_index].name = name;
+                                        }
+                                    });
+                                } else {
+                                    ui.label("Editing ALL trees (Name editing disabled)");
+                                }
+                                
+                                ui.collapsing("Position & 3D", |ui| {
+                                    ui.horizontal(|ui| {
+                                        ui.label("Origin X:");
+                                        if ui.add(egui::DragValue::new(&mut origin_offset.x).speed(1.0)).changed() {
+                                            if self.edit_all_trees {
+                                                for t in &mut self.config.trees { t.origin_offset.x = origin_offset.x; }
+                                            } else {
+                                                self.config.trees[self.selected_tree_index].origin_offset.x = origin_offset.x;
+                                            }
+                                        }
+                                        ui.label("Y:");
+                                        if ui.add(egui::DragValue::new(&mut origin_offset.y).speed(1.0)).changed() {
+                                            if self.edit_all_trees {
+                                                for t in &mut self.config.trees { t.origin_offset.y = origin_offset.y; }
+                                            } else {
+                                                self.config.trees[self.selected_tree_index].origin_offset.y = origin_offset.y;
+                                            }
+                                        }
+                                    });
+                                    
+                                    if ui.checkbox(&mut pseudo_3d, "Pseudo 3D Effect").changed() {
+                                        if self.edit_all_trees {
+                                            for t in &mut self.config.trees { t.pseudo_3d = pseudo_3d; }
+                                        } else {
+                                            self.config.trees[self.selected_tree_index].pseudo_3d = pseudo_3d;
+                                        }
+                                    }
+                                    
+                                    if pseudo_3d {
+                                        ui.horizontal(|ui| {
+                                            ui.label("Tilt X:");
+                                            if ui.add(egui::DragValue::new(&mut tilt_x).speed(1.0)).changed() {
+                                                if self.edit_all_trees {
+                                                    for t in &mut self.config.trees { t.tilt_x = tilt_x; }
+                                                } else {
+                                                    self.config.trees[self.selected_tree_index].tilt_x = tilt_x;
+                                                }
+                                            }
+                                            ui.label("Tilt Y:");
+                                            if ui.add(egui::DragValue::new(&mut tilt_y).speed(1.0)).changed() {
+                                                if self.edit_all_trees {
+                                                    for t in &mut self.config.trees { t.tilt_y = tilt_y; }
+                                                } else {
+                                                    self.config.trees[self.selected_tree_index].tilt_y = tilt_y;
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                                
+                                ui.horizontal(|ui| {
+                                    ui.label("Angle Offset:");
+                                    if ui.add(egui::DragValue::new(&mut angle_offset).speed(1.0)).changed() {
+                                        if self.edit_all_trees {
+                                            for t in &mut self.config.trees { t.angle_offset = angle_offset; }
+                                        } else {
+                                            self.config.trees[self.selected_tree_index].angle_offset = angle_offset;
+                                        }
+                                    }
+                                });
+                                
+                                ui.horizontal(|ui| {
+                                    ui.label("Freq Band (0-15):");
+                                    let mut use_band = frequency_band.is_some();
+                                    if ui.checkbox(&mut use_band, "Use Band").changed() {
+                                        let new_val = if use_band { Some(0) } else { None };
+                                        if self.edit_all_trees {
+                                            for t in &mut self.config.trees { t.frequency_band = new_val; }
+                                        } else {
+                                            self.config.trees[self.selected_tree_index].frequency_band = new_val;
+                                        }
+                                        frequency_band = new_val;
+                                    }
+                                    
+                                    if let Some(band) = frequency_band {
+                                        let mut b = band as i32;
+                                        if ui.add(egui::DragValue::new(&mut b).range(0..=15)).changed() {
+                                            let new_band = Some(b as usize);
+                                            if self.edit_all_trees {
+                                                for t in &mut self.config.trees { t.frequency_band = new_band; }
+                                            } else {
+                                                self.config.trees[self.selected_tree_index].frequency_band = new_band;
+                                            }
+                                        }
+                                    }
+                                });
+
+                                ui.horizontal(|ui| {
+                                    ui.label("Zoom:");
+                                    if ui.add(egui::DragValue::new(&mut base_zoom).speed(0.01)).changed() {
+                                        if self.edit_all_trees {
+                                            for t in &mut self.config.trees { t.base_zoom = base_zoom; }
+                                        } else {
+                                            self.config.trees[self.selected_tree_index].base_zoom = base_zoom;
+                                        }
+                                    }
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.label("Width:");
+                                    if ui.add(egui::DragValue::new(&mut base_width).speed(0.01)).changed() {
+                                        if self.edit_all_trees {
+                                            for t in &mut self.config.trees { t.base_width = base_width; }
+                                        } else {
+                                            self.config.trees[self.selected_tree_index].base_width = base_width;
+                                        }
+                                    }
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.label("Depth:");
+                                    if ui.add(egui::DragValue::new(&mut base_depth).speed(1.0)).changed() {
+                                        if self.edit_all_trees {
+                                            for t in &mut self.config.trees { t.base_depth = base_depth; }
+                                        } else {
+                                            self.config.trees[self.selected_tree_index].base_depth = base_depth;
+                                        }
+                                    }
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.label("Brightness:");
+                                    if ui.add(egui::DragValue::new(&mut base_brightness).speed(0.01)).changed() {
+                                        if self.edit_all_trees {
+                                            for t in &mut self.config.trees { t.base_brightness = base_brightness; }
+                                        } else {
+                                            self.config.trees[self.selected_tree_index].base_brightness = base_brightness;
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                        SettingsTab::Sparkles => {
+                            ui.label("Sparkle Configuration");
+                            ui.horizontal(|ui| {
+                                ui.label("Count on Beat:");
+                                ui.add(egui::DragValue::new(&mut self.config.sparkle_count_on_beat).speed(1.0).range(0..=500));
+                            });
+                            
+                            ui.horizontal(|ui| {
+                                ui.label("Spawn Mode:");
+                                egui::ComboBox::from_id_salt("spawn_mode")
+                                    .selected_text(match self.config.sparkle_spawn_mode {
+                                        SparkleSpawnMode::Point => "Point",
+                                        SparkleSpawnMode::RandomArea => "Random Area",
+                                        SparkleSpawnMode::Grid => "Grid",
+                                        SparkleSpawnMode::Circle => "Circle",
+                                        SparkleSpawnMode::Polygon => "Polygon",
+                                        SparkleSpawnMode::TreeOrigins => "Tree Origins",
+                                    })
+                                    .show_ui(ui, |ui| {
+                                        ui.selectable_value(&mut self.config.sparkle_spawn_mode, SparkleSpawnMode::Point, "Point");
+                                        ui.selectable_value(&mut self.config.sparkle_spawn_mode, SparkleSpawnMode::RandomArea, "Random Area");
+                                        ui.selectable_value(&mut self.config.sparkle_spawn_mode, SparkleSpawnMode::Grid, "Grid");
+                                        ui.selectable_value(&mut self.config.sparkle_spawn_mode, SparkleSpawnMode::Circle, "Circle");
+                                        ui.selectable_value(&mut self.config.sparkle_spawn_mode, SparkleSpawnMode::Polygon, "Polygon");
+                                        ui.selectable_value(&mut self.config.sparkle_spawn_mode, SparkleSpawnMode::TreeOrigins, "Tree Origins");
+                                    });
+                            });
+                            
+                            match self.config.sparkle_spawn_mode {
+                                SparkleSpawnMode::Grid => {
+                                    ui.horizontal(|ui| {
+                                        ui.label("Grid Spacing X:");
+                                        ui.add(egui::DragValue::new(&mut self.config.sparkle_grid_dims.x).speed(1.0));
+                                    });
+                                    ui.horizontal(|ui| {
+                                        ui.label("Grid Spacing Y:");
+                                        ui.add(egui::DragValue::new(&mut self.config.sparkle_grid_dims.y).speed(1.0));
+                                    });
+                                }
+                                SparkleSpawnMode::Circle | SparkleSpawnMode::Polygon => {
+                                    ui.horizontal(|ui| {
+                                        ui.label("Radius:");
+                                        ui.add(egui::DragValue::new(&mut self.config.sparkle_radius).speed(1.0));
+                                    });
+                                    if self.config.sparkle_spawn_mode == SparkleSpawnMode::Polygon {
+                                        ui.horizontal(|ui| {
+                                            ui.label("Sides:");
+                                            ui.add(egui::DragValue::new(&mut self.config.sparkle_polygon_sides).range(3..=20).speed(1.0));
+                                        });
+                                    }
+                                }
+                                _ => {}
+                            }
+                            
+                            ui.horizontal(|ui| {
+                                ui.label("Min Distance (Uniformity):");
+                                ui.add(egui::DragValue::new(&mut self.config.sparkle_min_dist).speed(1.0).range(0.0..=100.0));
+                            });
+                            
+                            ui.separator();
+                            ui.label("Particle Properties");
+                            ui.horizontal(|ui| {
+                                ui.label("Size Min:");
+                                ui.add(egui::DragValue::new(&mut self.config.sparkle_size_min).speed(0.1));
+                                ui.label("Max:");
+                                ui.add(egui::DragValue::new(&mut self.config.sparkle_size_max).speed(0.1));
+                            });
+                            ui.horizontal(|ui| {
+                                ui.label("Speed Min:");
+                                ui.add(egui::DragValue::new(&mut self.config.sparkle_speed_min).speed(1.0));
+                                ui.label("Max:");
+                                ui.add(egui::DragValue::new(&mut self.config.sparkle_speed_max).speed(1.0));
+                            });
+                            
+                            ui.separator();
+                            ui.label("Continuous Sparkles");
+                            ui.checkbox(&mut self.config.sparkle_always_on, "Always On");
+                            if self.config.sparkle_always_on {
+                                ui.horizontal(|ui| {
+                                    ui.label("Spawn Rate (per sec):");
+                                    ui.add(egui::DragValue::new(&mut self.config.sparkle_spawn_rate).speed(1.0));
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.label("Life Min:");
+                                    ui.add(egui::DragValue::new(&mut self.config.sparkle_life_min).speed(0.1));
+                                    ui.label("Max:");
+                                    ui.add(egui::DragValue::new(&mut self.config.sparkle_life_max).speed(0.1));
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.label("Alpha Min:");
+                                    ui.add(egui::DragValue::new(&mut self.config.sparkle_alpha_min).speed(0.01).range(0.0..=1.0));
+                                    ui.label("Max:");
+                                    ui.add(egui::DragValue::new(&mut self.config.sparkle_alpha_max).speed(0.01).range(0.0..=1.0));
+                                });
+                            }
+                            
+                            if ui.button("🎲 Randomize Sparkles").clicked() {
+                                self.config.sparkle_count_on_beat = (rand_float() * 50.0) as u32;
+                                self.config.sparkle_radius = 50.0 + rand_float() * 300.0;
+                                self.config.sparkle_size_min = 1.0 + rand_float() * 5.0;
+                                self.config.sparkle_size_max = self.config.sparkle_size_min + rand_float() * 10.0;
+                                self.config.sparkle_speed_min = 50.0 + rand_float() * 200.0;
+                                self.config.sparkle_speed_max = self.config.sparkle_speed_min + rand_float() * 300.0;
+                                
+                                // Randomize continuous params
+                                self.config.sparkle_spawn_rate = 5.0 + rand_float() * 50.0;
+                                self.config.sparkle_life_min = 0.2 + rand_float() * 1.0;
+                                self.config.sparkle_life_max = self.config.sparkle_life_min + rand_float() * 2.0;
+                                self.config.sparkle_alpha_min = 0.1 + rand_float() * 0.5;
+                                self.config.sparkle_alpha_max = self.config.sparkle_alpha_min + rand_float() * (1.0 - self.config.sparkle_alpha_min);
+                                
+                                // Random mode
+                                let mode_idx = (rand_float() * 5.0) as u32;
+                                self.config.sparkle_spawn_mode = match mode_idx {
+                                    0 => SparkleSpawnMode::Point,
+                                    1 => SparkleSpawnMode::RandomArea,
+                                    2 => SparkleSpawnMode::Grid,
+                                    3 => SparkleSpawnMode::Circle,
+                                    _ => SparkleSpawnMode::Polygon,
+                                };
+                            }
+                        }
+                        SettingsTab::Blur => {
+                            ui.label("Motion Blur / Trails Configuration");
+                            ui.checkbox(&mut self.config.blur_enabled, "Enable Blur");
+                            
+                            if self.config.blur_enabled {
+                                ui.horizontal(|ui| {
+                                    ui.label("Duration (Samples):");
+                                    ui.add(egui::DragValue::new(&mut self.config.blur_samples).range(1..=20).speed(1.0));
+                                });
+                                
+                                ui.horizontal(|ui| {
+                                    ui.label("Intensity (Opacity):");
+                                    ui.add(egui::DragValue::new(&mut self.config.blur_opacity).range(0.0..=1.0).speed(0.01));
+                                });
+                                
+                                ui.horizontal(|ui| {
+                                    ui.label("Depth Reduction:");
+                                    ui.add(egui::DragValue::new(&mut self.config.blur_depth_reduction).range(0..=5).speed(1.0));
+                                });
+                            }
+                        }
+                    }
 
                     ui.add_space(4.0);
                     ui.horizontal(|ui| {
                         ui.checkbox(&mut self.restore_fractal_on_back, "Reset fractal to defaults when switching back");
                     });
+                    
+                    ui.add_space(4.0);
+                    if ui.button("🎲 Randomize All Parameters").clicked() {
+                        // Randomize Trees
+                        for tree in &mut self.config.trees {
+                            tree.base_zoom = 0.05 + rand_float() * 0.2;
+                            tree.base_width = 0.5 + rand_float() * 1.5;
+                            tree.base_depth = 10 + (rand_float() * 10.0) as u32;
+                            tree.base_brightness = 0.5 + rand_float() * 0.5;
+                            tree.zoom_bass_mult = rand_float() * 0.3;
+                            tree.width_bass_mult = rand_float() * 0.5;
+                            tree.depth_complexity_mult = rand_float() * 5.0;
+                            tree.brightness_treble_mult = rand_float() * 0.8;
+                        }
+                        
+                        // Randomize Sparkles
+                        self.config.sparkle_count_on_beat = (rand_float() * 50.0) as u32;
+                        self.config.sparkle_radius = 50.0 + rand_float() * 300.0;
+                        self.config.sparkle_size_min = 1.0 + rand_float() * 5.0;
+                        self.config.sparkle_size_max = self.config.sparkle_size_min + rand_float() * 10.0;
+                        self.config.sparkle_speed_min = 50.0 + rand_float() * 200.0;
+                        self.config.sparkle_speed_max = self.config.sparkle_speed_min + rand_float() * 300.0;
+                        
+                        // Randomize continuous params
+                        self.config.sparkle_spawn_rate = 5.0 + rand_float() * 50.0;
+                        self.config.sparkle_life_min = 0.2 + rand_float() * 1.0;
+                        self.config.sparkle_life_max = self.config.sparkle_life_min + rand_float() * 2.0;
+                        self.config.sparkle_alpha_min = 0.1 + rand_float() * 0.5;
+                        self.config.sparkle_alpha_max = self.config.sparkle_alpha_min + rand_float() * (1.0 - self.config.sparkle_alpha_min);
+                        
+                        let mode_idx = (rand_float() * 5.0) as u32;
+                        self.config.sparkle_spawn_mode = match mode_idx {
+                            0 => SparkleSpawnMode::Point,
+                            1 => SparkleSpawnMode::RandomArea,
+                            2 => SparkleSpawnMode::Grid,
+                            3 => SparkleSpawnMode::Circle,
+                            _ => SparkleSpawnMode::Polygon,
+                        };
+                        self.config.sparkle_grid_dims.x = 20.0 + rand_float() * 80.0;
+                        self.config.sparkle_grid_dims.y = 20.0 + rand_float() * 80.0;
+                        
+                        // Randomize Global
+                        self.config.rotation_speed = (rand_float() - 0.5) * 2.0;
+                        self.config.color_cycle_speed = rand_float() * 0.5;
+                    }
                 }
             });
             
@@ -905,22 +1642,63 @@ impl MusicVisualizerApp {
                         ui.add(egui::DragValue::new(&mut self.config.up_treble_mult).speed(0.01));
                     });
                 } else {
-                    ui.horizontal(|ui| {
-                        ui.label("Bass → Zoom:");
-                        ui.add(egui::DragValue::new(&mut self.config.zoom_bass_mult).speed(0.01));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("Bass → Width:");
-                        ui.add(egui::DragValue::new(&mut self.config.width_bass_mult).speed(0.01));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("Complexity → Depth:");
-                        ui.add(egui::DragValue::new(&mut self.config.depth_complexity_mult).speed(0.1));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("Treble → Brightness:");
-                        ui.add(egui::DragValue::new(&mut self.config.brightness_treble_mult).speed(0.01));
-                    });
+                    if !self.config.trees.is_empty() {
+                        if self.selected_tree_index >= self.config.trees.len() {
+                            self.selected_tree_index = 0;
+                        }
+                        
+                        let mut zoom_bass_mult = self.config.trees[self.selected_tree_index].zoom_bass_mult;
+                        let mut width_bass_mult = self.config.trees[self.selected_tree_index].width_bass_mult;
+                        let mut depth_complexity_mult = self.config.trees[self.selected_tree_index].depth_complexity_mult;
+                        let mut brightness_treble_mult = self.config.trees[self.selected_tree_index].brightness_treble_mult;
+                        
+                        if self.edit_all_trees {
+                            ui.label("Editing Reactivity for ALL trees");
+                        } else {
+                            ui.label(format!("Reactivity for: {}", self.config.trees[self.selected_tree_index].name));
+                        }
+
+                        ui.horizontal(|ui| {
+                            ui.label("Bass → Zoom:");
+                            if ui.add(egui::DragValue::new(&mut zoom_bass_mult).speed(0.01)).changed() {
+                                if self.edit_all_trees {
+                                    for t in &mut self.config.trees { t.zoom_bass_mult = zoom_bass_mult; }
+                                } else {
+                                    self.config.trees[self.selected_tree_index].zoom_bass_mult = zoom_bass_mult;
+                                }
+                            }
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label("Bass → Width:");
+                            if ui.add(egui::DragValue::new(&mut width_bass_mult).speed(0.01)).changed() {
+                                if self.edit_all_trees {
+                                    for t in &mut self.config.trees { t.width_bass_mult = width_bass_mult; }
+                                } else {
+                                    self.config.trees[self.selected_tree_index].width_bass_mult = width_bass_mult;
+                                }
+                            }
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label("Complexity → Depth:");
+                            if ui.add(egui::DragValue::new(&mut depth_complexity_mult).speed(0.1)).changed() {
+                                if self.edit_all_trees {
+                                    for t in &mut self.config.trees { t.depth_complexity_mult = depth_complexity_mult; }
+                                } else {
+                                    self.config.trees[self.selected_tree_index].depth_complexity_mult = depth_complexity_mult;
+                                }
+                            }
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label("Treble → Brightness:");
+                            if ui.add(egui::DragValue::new(&mut brightness_treble_mult).speed(0.01)).changed() {
+                                if self.edit_all_trees {
+                                    for t in &mut self.config.trees { t.brightness_treble_mult = brightness_treble_mult; }
+                                } else {
+                                    self.config.trees[self.selected_tree_index].brightness_treble_mult = brightness_treble_mult;
+                                }
+                            }
+                        });
+                    }
                 }
             });
             
@@ -1429,7 +2207,9 @@ impl eframe::App for MusicVisualizerApp {
         }
         
         // Main visualization area
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::CentralPanel::default()
+            .frame(egui::Frame::new().fill(self.config.background_color))
+            .show(ctx, |ui| {
             let _available = ui.available_rect_before_wrap();
             
             // Toggle settings button
@@ -1451,6 +2231,9 @@ impl eframe::App for MusicVisualizerApp {
                 remaining.min,
                 Pos2::new(remaining.max.x, remaining.max.y - bottom_ui_height),
             );
+            
+            // Update last screen rect for particle spawning
+            self.last_screen_rect = fractal_rect;
             
             // Draw appropriate visualizer for selected mode
             let fractal_response = ui.allocate_rect(fractal_rect, egui::Sense::hover());
@@ -1532,6 +2315,7 @@ fn extract_youtube_id(url: &str) -> Option<String> {
 }
 
 // WASM entry point
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn start() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();

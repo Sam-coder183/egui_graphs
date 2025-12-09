@@ -311,6 +311,7 @@ mod code_analyzer {
     }
 
     impl CodeNode {
+        #[allow(dead_code)]
         fn set_class_name(&mut self, name: String) {
             self.class_name = name;
         }
@@ -535,7 +536,7 @@ mod code_analyzer {
 
             let label_pos = Pos2::new(
                 midpoint.x - galley.size().x / 2.0,
-                midpoint.y - galley.size().y / 2.0 - 10.0,
+                midpoint.y - galley.size().y / 2.0,
             );
 
             let label_rect = Rect::from_min_size(label_pos, galley.size() + Vec2::new(4.0, 2.0));
@@ -1003,8 +1004,10 @@ mod code_analyzer {
         modularity: f64,
         // Centrality
         degree_centrality: HashMap<NodeIndex<u32>, f64>,
+        #[allow(dead_code)]
         betweenness_centrality: HashMap<NodeIndex<u32>, f64>,
         // Cycles
+        #[allow(dead_code)]
         cycle_count: usize,
         // Crossing estimation
         estimated_crossings: usize,
@@ -4232,7 +4235,7 @@ mod code_analyzer {
                             // Get metadata for coordinate transformation
                             let meta = MetadataFrame::new(Some(GRAPH_VIEW_ID.to_string())).load(ui);
                             let screen_pos = meta.canvas_to_screen_pos(node_pos);
-                            let node_radius = meta.canvas_to_screen_size(30.0);
+                            let _node_radius = meta.canvas_to_screen_size(30.0);
                             
                             // Track whether to finish editing
                             let mut finish_editing = false;

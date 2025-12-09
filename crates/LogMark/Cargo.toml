@@ -1,5 +1,5 @@
 [package]
-name = "LogMark"
+name = "logmark"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -16,20 +16,28 @@ name = "logmark"
 path = "src/main.rs"
 
 [dependencies]
-egui.workspace = true
+egui = { workspace = true, features = ["serde"] }
 eframe.workspace = true
-petgraph.workspace = true
+petgraph = { workspace = true, features = ["serde-1"] }
 serde.workspace = true
 serde_json.workspace = true
 egui_graphs = { path = "../egui_graphs" }
 egui_commonmark = "0.22"
 regex = "1.12"
+ron = "0.12.0"
+rfd = "0.16.0"
 
 # WASM dependencies (only for wasm32 target)
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
-web-sys = { version = "0.3", features = ["Window", "Document", "HtmlCanvasElement"] }
+js-sys = "0.3"
+web-sys = { version = "0.3", features = [
+	"Window", "Document", "HtmlCanvasElement", "Storage",
+	"Url", "Blob", "BlobPropertyBag", "HtmlAnchorElement",
+	"HtmlInputElement", "FileReader", "File", "FileList", "Event",
+    "HtmlElement", "Node", "CssStyleDeclaration"
+] }
 console_error_panic_hook = "0.1"
 getrandom = { version = "0.3", features = ["wasm_js"] }
 

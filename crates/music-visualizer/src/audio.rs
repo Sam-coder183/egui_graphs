@@ -20,6 +20,8 @@ pub struct AudioAnalysis {
     // Beat detection
     pub beat: bool,        // True when beat detected
     pub beat_intensity: f32,
+    pub beat_timer: f32,   // Cooldown timer
+    pub energy_history: Vec<f32>, // For dynamic threshold
 
     // Spectral features
     pub spectral_centroid: f32,
@@ -41,6 +43,7 @@ impl AudioAnalysis {
         Self {
             frequency_data: vec![0u8; 256],
             time_data: vec![0u8; 256],
+            energy_history: vec![0.0; 60], // 1 second history at 60fps
             ..Default::default()
         }
     }
@@ -90,11 +93,50 @@ impl AudioAnalysis {
             .max_by(|a, b| a.partial_cmp(b).unwrap())
             .unwrap_or(0.0) / 128.0;
 
-        // Beat detection (energy spike in bass)
-        let bass_threshold = 0.6;
-        let energy_jump = new_bass - self.smooth_bass;
-        self.beat = energy_jump > 0.1 && new_bass > bass_threshold;
-        self.beat_intensity = if self.beat { energy_jump.min(1.0) } else { 0.0 };
+        // Improved Beat Detection
+        // 1. Calculate instant energy (bass + low_mid)
+        let instant_energy = new_bass * 0.8 + new_low_mid * 0.2;
+        
+        // 2. Update local energy history
+        self.energy_history.push(instant_energy);
+        if self.energy_history.len() > 60 {
+            self.energy_history.remove(0);
+        }
+        
+        // 3. Calculate local average energy
+        let local_avg_energy: f32 = if !self.energy_history.is_empty() {
+            self.energy_history.iter().sum::<f32>() / self.energy_history.len() as f32
+        } else {
+            0.0
+        };
+        
+        // 4. Calculate variance to determine dynamic threshold sensitivity
+        let variance: f32 = if !self.energy_history.is_empty() {
+            self.energy_history.iter().map(|&e| (e - local_avg_energy).powi(2)).sum::<f32>() / self.energy_history.len() as f32
+        } else {
+            0.0
+        };
+        
+        // Dynamic constant C based on variance (linear regression approximation)
+        // High variance -> higher threshold needed
+        let c = (-0.0025714 * variance) + 1.5142857; // Simple heuristic
+        let threshold = local_avg_energy * c.max(1.1); // Ensure threshold is at least 10% above average
+
+        // 5. Check for beat with cooldown
+        // Decrease timer (assuming ~60fps, so 1.0/60.0 per frame roughly, but we don't have dt here. 
+        // We'll just use a counter or rely on the fact this is called per frame)
+        if self.beat_timer > 0.0 {
+            self.beat_timer -= 1.0;
+        }
+
+        if instant_energy > threshold && instant_energy > 0.3 && self.beat_timer <= 0.0 {
+            self.beat = true;
+            self.beat_intensity = (instant_energy - local_avg_energy).min(1.0);
+            self.beat_timer = 15.0; // ~0.25s cooldown at 60fps
+        } else {
+            self.beat = false;
+            self.beat_intensity = 0.0;
+        }
 
         // Spectral centroid (brightness)
         let total_energy: f32 = frequency_data.iter().map(|&x| x as f32).sum();

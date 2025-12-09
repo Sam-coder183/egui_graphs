@@ -8,7 +8,12 @@ pub struct LogNodeData {
     pub content: String,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default)]
+pub struct LogEdgeData {
+    pub label: Option<String>,
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct LogNode {
     pub pos: Pos2,
     pub label: String,
@@ -31,7 +36,7 @@ impl From<NodeProps<LogNodeData>> for LogNode {
     }
 }
 
-impl DisplayNode<LogNodeData, (), Directed, u32> for LogNode {
+impl DisplayNode<LogNodeData, LogEdgeData, Directed, u32> for LogNode {
     fn is_inside(&self, pos: Pos2) -> bool {
         let dir = pos - self.pos;
         dir.length() <= self.radius
@@ -94,24 +99,26 @@ impl DisplayNode<LogNodeData, (), Directed, u32> for LogNode {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct LogEdge {
     pub selected: bool,
+    pub label: Option<String>,
 }
 
-impl From<EdgeProps<()>> for LogEdge {
-    fn from(edge_props: EdgeProps<()>) -> Self {
+impl From<EdgeProps<LogEdgeData>> for LogEdge {
+    fn from(edge_props: EdgeProps<LogEdgeData>) -> Self {
         Self {
             selected: edge_props.selected,
+            label: edge_props.payload.label.clone(),
         }
     }
 }
 
-impl DisplayEdge<LogNodeData, (), Directed, u32, LogNode> for LogEdge {
+impl DisplayEdge<LogNodeData, LogEdgeData, Directed, u32, LogNode> for LogEdge {
     fn is_inside(
         &self,
-        start: &Node<LogNodeData, (), Directed, u32, LogNode>,
-        end: &Node<LogNodeData, (), Directed, u32, LogNode>,
+        start: &Node<LogNodeData, LogEdgeData, Directed, u32, LogNode>,
+        end: &Node<LogNodeData, LogEdgeData, Directed, u32, LogNode>,
         pos: Pos2,
     ) -> bool {
         let start_pos = start.location();
@@ -133,8 +140,8 @@ impl DisplayEdge<LogNodeData, (), Directed, u32, LogNode> for LogEdge {
 
     fn shapes(
         &mut self,
-        start: &Node<LogNodeData, (), Directed, u32, LogNode>,
-        end: &Node<LogNodeData, (), Directed, u32, LogNode>,
+        start: &Node<LogNodeData, LogEdgeData, Directed, u32, LogNode>,
+        end: &Node<LogNodeData, LogEdgeData, Directed, u32, LogNode>,
         ctx: &DrawContext,
     ) -> Vec<Shape> {
         let start_pos = start.location();
@@ -158,11 +165,12 @@ impl DisplayEdge<LogNodeData, (), Directed, u32, LogNode> for LogEdge {
         shapes.push(egui::epaint::Shape::line_segment([screen_start, screen_end], stroke));
 
         // Arrow head
+        let screen_dir = (screen_end - screen_start).normalized();
         let arrow_size = 10.0;
-        let perp = Vec2::new(-dir.y, dir.x);
-        let tip = screen_end - dir * arrow_size;
-        let left = tip + perp * arrow_size * 0.5;
-        let right = tip - perp * arrow_size * 0.5;
+        let screen_perp = Vec2::new(-screen_dir.y, screen_dir.x);
+        let tip = screen_end - screen_dir * arrow_size;
+        let left = tip + screen_perp * arrow_size * 0.5;
+        let right = tip - screen_perp * arrow_size * 0.5;
 
         shapes.push(egui::epaint::Shape::convex_polygon(
             vec![screen_end, left, right],
@@ -170,10 +178,35 @@ impl DisplayEdge<LogNodeData, (), Directed, u32, LogNode> for LogEdge {
             Stroke::NONE,
         ));
 
+        // Label
+        if let Some(text) = &self.label {
+            let mid = screen_start + (screen_end - screen_start) * 0.5;
+            // Offset "up" (perpendicular)
+            let text_pos = mid - screen_perp * 15.0;
+            
+            let galley = ctx.ctx.fonts_mut(|f| {
+                f.layout_no_wrap(
+                    text.clone(),
+                    FontId::new(10.0, FontFamily::Proportional),
+                    Color32::LIGHT_GRAY,
+                )
+            });
+            
+            // Center the text on text_pos
+            let centered_pos = text_pos - galley.size() / 2.0;
+            
+            // Add a small background for readability
+            let bg_rect = galley.rect.translate(centered_pos.to_vec2()).expand(2.0);
+            shapes.push(egui::epaint::Shape::rect_filled(bg_rect, 2.0, Color32::from_black_alpha(150)));
+
+            shapes.push(egui::epaint::TextShape::new(centered_pos, galley, Color32::LIGHT_GRAY).into());
+        }
+
         shapes
     }
 
-    fn update(&mut self, state: &EdgeProps<()>) {
+    fn update(&mut self, state: &EdgeProps<LogEdgeData>) {
         self.selected = state.selected;
+        self.label = state.payload.label.clone();
     }
 }

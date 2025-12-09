@@ -1,0 +1,532 @@
+(
+    g: (
+        nodes: [
+            (
+                id: Some(0),
+                props: (
+                    payload: (
+                        label: "LogMark",
+                        content: "# LogMark\n\nWelcome to LogMark, a graph-based note app.\n\nBrowse nodes to learn features. Select a node to edit on the right.",
+                    ),
+                    label: "node 0",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    color: None,
+                    location: (
+                        x: 1460.7922,
+                        y: -628.1226,
+                    ),
+                ),
+                display: (
+                    pos: (
+                        x: 1460.7922,
+                        y: -628.1226,
+                    ),
+                    label: "LogMark",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    radius: 30.0,
+                ),
+                _marker: (),
+            ),
+            (
+                id: Some(1),
+                props: (
+                    payload: (
+                        label: "Auto-Commit",
+                        content: "# Auto-Commit\n\nEdits increment a counter; after 10 the app auto-commits.\nYou can keep typing—commits are automatic.",
+                    ),
+                    label: "node 1",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    color: None,
+                    location: (
+                        x: 1754.3977,
+                        y: -810.6417,
+                    ),
+                ),
+                display: (
+                    pos: (
+                        x: 1754.3977,
+                        y: -810.6417,
+                    ),
+                    label: "Auto-Commit",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    radius: 30.0,
+                ),
+                _marker: (),
+            ),
+            (
+                id: Some(2),
+                props: (
+                    payload: (
+                        label: "Layouts",
+                        content: "# Layouts\n\nSwitch layouts from the left Options bar.\n- Random: scattered.\n- Force: physics.\n- Hierarchical: tree view to fill the screen.\nhola esto es una prueba [[prueba]]",
+                    ),
+                    label: "node 2",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    color: None,
+                    location: (
+                        x: 1735.7971,
+                        y: -307.56204,
+                    ),
+                ),
+                display: (
+                    pos: (
+                        x: 1735.7971,
+                        y: -307.56204,
+                    ),
+                    label: "Layouts",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    radius: 30.0,
+                ),
+                _marker: (),
+            ),
+            (
+                id: Some(3),
+                props: (
+                    payload: (
+                        label: "Relationships",
+                        content: "# Relationships\n\nEdges show labels above arrows.\nUse [[WikiLinks]] or the slash menu to connect notes.\n\n/\nhola",
+                    ),
+                    label: "node 3",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    color: None,
+                    location: (
+                        x: 1134.7251,
+                        y: -848.2492,
+                    ),
+                ),
+                display: (
+                    pos: (
+                        x: 1134.7251,
+                        y: -848.2492,
+                    ),
+                    label: "Relationships",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    radius: 30.0,
+                ),
+                _marker: (),
+            ),
+            (
+                id: Some(4),
+                props: (
+                    payload: (
+                        label: "Slash Menu",
+                        content: "# Slash Menu\n\nType `/` to open. Navigate with ↑/↓. Press Enter or Tab to accept. Options: headings, Lua block, or link to another node.",
+                    ),
+                    label: "node 4",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    color: None,
+                    location: (
+                        x: 1149.167,
+                        y: -607.2379,
+                    ),
+                ),
+                display: (
+                    pos: (
+                        x: 1149.167,
+                        y: -607.2379,
+                    ),
+                    label: "Slash Menu",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    radius: 30.0,
+                ),
+                _marker: (),
+            ),
+            (
+                id: Some(5),
+                props: (
+                    payload: (
+                        label: "Lua",
+                        content: "# Lua Integration\n\nLogMark supports Lua scripting for dynamic content.\n\n## Usage\nCreate a code block with `lua` language:\n\n```lua\n-- Example\nlocal x = 10\nprint(\'Value:\', x)\ngraph.add_node(\'New Node\')\n```\n\n## Features\n- **Run**: Execute the script.\n- **Debug**: Inspect variables in the left sidebar.\n- **API**:\n  - `print(val)`: Print to output.\n  - `graph.add_node(\'label\')`: Create a node.\n  - `graph.add_edge(\'from\', \'to\', \'label\')`: Connect nodes.\n  - `graph.list_nodes()`: List all nodes.",
+                    ),
+                    label: "node 5",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    color: None,
+                    location: (
+                        x: 1362.1036,
+                        y: -924.5686,
+                    ),
+                ),
+                display: (
+                    pos: (
+                        x: 1362.1036,
+                        y: -924.5686,
+                    ),
+                    label: "Lua",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    radius: 30.0,
+                ),
+                _marker: (),
+            ),
+            (
+                id: Some(6),
+                props: (
+                    payload: (
+                        label: "Hierarchy",
+                        content: "# Hierarchy\n\nHierarchical layout provides a node tree view that can fill the screen.",
+                    ),
+                    label: "node 6",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    color: None,
+                    location: (
+                        x: 1518.833,
+                        y: -324.1743,
+                    ),
+                ),
+                display: (
+                    pos: (
+                        x: 1518.833,
+                        y: -324.1743,
+                    ),
+                    label: "Hierarchy",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    radius: 30.0,
+                ),
+                _marker: (),
+            ),
+            (
+                id: Some(7),
+                props: (
+                    payload: (
+                        label: "WikiLinks",
+                        content: "# WikiLinks",
+                    ),
+                    label: "node 7",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    color: None,
+                    location: (
+                        x: 847.6032,
+                        y: -1045.4441,
+                    ),
+                ),
+                display: (
+                    pos: (
+                        x: 847.6032,
+                        y: -1045.4441,
+                    ),
+                    label: "WikiLinks",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    radius: 30.0,
+                ),
+                _marker: (),
+            ),
+            (
+                id: Some(8),
+                props: (
+                    payload: (
+                        label: "prueba",
+                        content: "# prueba",
+                    ),
+                    label: "node 8",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    color: None,
+                    location: (
+                        x: 1974.7645,
+                        y: -66.34089,
+                    ),
+                ),
+                display: (
+                    pos: (
+                        x: 1974.7645,
+                        y: -66.34089,
+                    ),
+                    label: "prueba",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    radius: 30.0,
+                ),
+                _marker: (),
+            ),
+            (
+                id: Some(9),
+                props: (
+                    payload: (
+                        label: "x",
+                        content: "# x\n\n/\ncl",
+                    ),
+                    label: "node 9",
+                    selected: true,
+                    dragged: false,
+                    hovered: false,
+                    color: None,
+                    location: (
+                        x: -7120.65,
+                        y: 3344.8665,
+                    ),
+                ),
+                display: (
+                    pos: (
+                        x: -7120.65,
+                        y: 3344.8665,
+                    ),
+                    label: "x",
+                    selected: true,
+                    dragged: false,
+                    hovered: false,
+                    radius: 30.0,
+                ),
+                _marker: (),
+            ),
+            (
+                id: Some(10),
+                props: (
+                    payload: (
+                        label: "d",
+                        content: "# d\n- [ ] TODO",
+                    ),
+                    label: "node 10",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    color: None,
+                    location: (
+                        x: -4429.395,
+                        y: 2550.335,
+                    ),
+                ),
+                display: (
+                    pos: (
+                        x: -4429.395,
+                        y: 2550.335,
+                    ),
+                    label: "d",
+                    selected: false,
+                    dragged: false,
+                    hovered: false,
+                    radius: 30.0,
+                ),
+                _marker: (),
+            ),
+        ],
+        node_holes: [],
+        edge_property: directed,
+        edges: [
+            Some((0, 1, (
+                id: Some(0),
+                display: (
+                    selected: false,
+                    label: Some("explains"),
+                ),
+                props: (
+                    payload: (
+                        label: Some("explains"),
+                    ),
+                    order: 0,
+                    selected: false,
+                    label: "edge 0",
+                ),
+                _marker: (),
+            ))),
+            Some((0, 2, (
+                id: Some(1),
+                display: (
+                    selected: false,
+                    label: Some("shows"),
+                ),
+                props: (
+                    payload: (
+                        label: Some("shows"),
+                    ),
+                    order: 0,
+                    selected: false,
+                    label: "edge 1",
+                ),
+                _marker: (),
+            ))),
+            Some((0, 3, (
+                id: Some(2),
+                display: (
+                    selected: false,
+                    label: Some("details"),
+                ),
+                props: (
+                    payload: (
+                        label: Some("details"),
+                    ),
+                    order: 0,
+                    selected: false,
+                    label: "edge 2",
+                ),
+                _marker: (),
+            ))),
+            Some((0, 4, (
+                id: Some(3),
+                display: (
+                    selected: false,
+                    label: Some("includes"),
+                ),
+                props: (
+                    payload: (
+                        label: Some("includes"),
+                    ),
+                    order: 0,
+                    selected: false,
+                    label: "edge 3",
+                ),
+                _marker: (),
+            ))),
+            Some((0, 5, (
+                id: Some(4),
+                display: (
+                    selected: false,
+                    label: Some("supports"),
+                ),
+                props: (
+                    payload: (
+                        label: Some("supports"),
+                    ),
+                    order: 0,
+                    selected: false,
+                    label: "edge 4",
+                ),
+                _marker: (),
+            ))),
+            Some((0, 6, (
+                id: Some(5),
+                display: (
+                    selected: false,
+                    label: Some("adds"),
+                ),
+                props: (
+                    payload: (
+                        label: Some("adds"),
+                    ),
+                    order: 0,
+                    selected: false,
+                    label: "edge 5",
+                ),
+                _marker: (),
+            ))),
+            Some((4, 3, (
+                id: Some(6),
+                display: (
+                    selected: false,
+                    label: Some("creates"),
+                ),
+                props: (
+                    payload: (
+                        label: Some("creates"),
+                    ),
+                    order: 0,
+                    selected: false,
+                    label: "edge 6",
+                ),
+                _marker: (),
+            ))),
+            Some((2, 6, (
+                id: Some(7),
+                display: (
+                    selected: false,
+                    label: Some("offers"),
+                ),
+                props: (
+                    payload: (
+                        label: Some("offers"),
+                    ),
+                    order: 0,
+                    selected: false,
+                    label: "edge 7",
+                ),
+                _marker: (),
+            ))),
+            Some((5, 3, (
+                id: Some(8),
+                display: (
+                    selected: false,
+                    label: Some("annotates"),
+                ),
+                props: (
+                    payload: (
+                        label: Some("annotates"),
+                    ),
+                    order: 0,
+                    selected: false,
+                    label: "edge 8",
+                ),
+                _marker: (),
+            ))),
+            Some((3, 7, (
+                id: Some(9),
+                display: (
+                    selected: false,
+                    label: Some("links to"),
+                ),
+                props: (
+                    payload: (
+                        label: Some("links to"),
+                    ),
+                    order: 0,
+                    selected: false,
+                    label: "edge 9",
+                ),
+                _marker: (),
+            ))),
+            Some((2, 8, (
+                id: Some(10),
+                display: (
+                    selected: false,
+                    label: Some("links to"),
+                ),
+                props: (
+                    payload: (
+                        label: Some("links to"),
+                    ),
+                    order: 0,
+                    selected: false,
+                    label: "edge 10",
+                ),
+                _marker: (),
+            ))),
+        ],
+    ),
+    selected_nodes: [
+        9,
+    ],
+    selected_edges: [],
+    dragged_node: None,
+    hovered_node: None,
+    bounds: (
+        min: (
+            x: -7150.65,
+            y: -1075.4441,
+        ),
+        max: (
+            x: 2004.7645,
+            y: 3374.8665,
+        ),
+    ),
+)
