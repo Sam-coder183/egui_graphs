@@ -1,6 +1,7 @@
 use eframe::App;
 use egui::{Context, SidePanel, CentralPanel, TopBottomPanel, Window, Align2, Key};
 use std::time::{Duration, Instant};
+use std::path::Path;
 use petgraph::graph::EdgeIndex;
 #[cfg(not(target_arch = "wasm32"))]
 use std::fs;
@@ -23,6 +24,7 @@ use egui_graphs::{
     LayoutHierarchical, LayoutStateHierarchical,
     events::Event as GraphEvent,
     SettingsInteraction, SettingsNavigation,
+    MetadataFrame,
 };
 use petgraph::{stable_graph::StableGraph, Directed};
 use petgraph::visit::{IntoEdgeReferences, EdgeRef};
@@ -37,6 +39,7 @@ use crate::utils::{calculate_edge_cardinality, process_wikilinks_for_preview};
 use crate::persistence::{load_autosave, commit_changes, default_graph};
 use crate::lua::LuaEngine;
 use crate::ui::editor::EditorState;
+use crate::analyzer::ProjectAnalyzer;
 use crate::ui::settings::Settings3D;
 use crate::ui::help::show_help_window;
 use crate::ui::settings_window::SettingsWindow;
@@ -113,6 +116,9 @@ pub struct LogMarkApp {
 
     // Selection State
     selected_node: Option<petgraph::stable_graph::NodeIndex>,
+
+    // Force Layout Settings
+    show_force_settings: bool,
 }
 
 impl LogMarkApp {
@@ -124,6 +130,7 @@ impl LogMarkApp {
         Self {
             graph,
             settings_window: SettingsWindow::default(),
+            show_force_settings: false,
             editing_label: None,
             label_edit_buffer: String::new(),
             editing_edge: None,
@@ -306,6 +313,78 @@ impl LogMarkApp {
             self.push_toast("Redo");
         }
     }
+
+    fn run_code_analysis(&mut self) {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            if let Some(path) = FileDialog::new().pick_folder() {
+                self.push_undo();
+                let analyzer = ProjectAnalyzer::new();
+                let files = analyzer.analyze_path(&path);
+                
+                let mut g = StableGraph::new();
+                let mut node_map = std::collections::HashMap::new();
+
+                // Create nodes
+                for file in &files {
+                    let label = file.name.clone();
+                    let content = file.content.clone();
+                    
+                    let idx = g.add_node(LogNodeData {
+                        label: label.clone(),
+                        content,
+                    });
+                    
+                    // Map "filename_stem" to idx for easier import matching
+                    // e.g. "app.rs" -> "app"
+                    let stem = Path::new(&file.name).file_stem().and_then(|s| s.to_str()).unwrap_or(&file.name).to_string();
+                    node_map.insert(stem, idx);
+                    // Also map full name just in case
+                    node_map.insert(file.name.clone(), idx);
+                }
+
+                // Create edges
+                for file in &files {
+                    let source_stem = Path::new(&file.name).file_stem().and_then(|s| s.to_str()).unwrap_or(&file.name);
+                    // We need to find the node index for the current file to use as source
+                    // Since we inserted both stem and full name, we can try looking up by stem
+                    if let Some(source_idx) = node_map.get(source_stem) {
+                         for import in &file.imports {
+                             // Try to find target node by import name
+                             if let Some(target_idx) = node_map.get(import) {
+                                 if source_idx != target_idx {
+                                     g.add_edge(*source_idx, *target_idx, LogEdgeData {
+                                         label: Some("imports".to_string()),
+                                         cardinality: None,
+                                     });
+                                 }
+                             }
+                         }
+                    }
+                }
+
+                let mut graph = Graph::from(&g);
+                // Randomize positions initially
+                let indices: Vec<_> = graph.g().node_indices().collect();
+                for idx in indices {
+                    if let Some(node) = graph.node_mut(idx) {
+                        use rand::Rng;
+                        let mut rng = rand::thread_rng();
+                        node.set_location(egui::Pos2::new(rng.gen_range(0.0..1000.0), rng.gen_range(0.0..1000.0)));
+                    }
+                }
+
+                self.graph = graph;
+                self.layout = AppLayout::Force; 
+                self.fit_to_view_next = true;
+                self.push_toast(format!("Analyzed {} files", files.len()));
+            }
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.push_toast("Code analysis not supported in WASM yet");
+        }
+    }
 }
 
 impl App for LogMarkApp {
@@ -370,14 +449,28 @@ impl App for LogMarkApp {
                 egui::ComboBox::from_label("View")
                     .selected_text(self.visualization_mode.label())
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut self.visualization_mode, VisualizationMode::TwoD, "2D View");
-                        ui.selectable_value(&mut self.visualization_mode, VisualizationMode::ThreeD, "3D View");
+                        ui.selectable_value(&mut self.visualization_mode, VisualizationMode::TwoD, "Documentation View 📝");
+                        ui.selectable_value(&mut self.visualization_mode, VisualizationMode::CodeAnalysis, "Code Analysis");
                     });
                 
-                if self.visualization_mode == VisualizationMode::ThreeD {
-                    if ui.button("⚙ 3D Settings").clicked() {
-                        self.settings_3d.show_settings = !self.settings_3d.show_settings;
+                if self.visualization_mode == VisualizationMode::CodeAnalysis {
+                    if ui.button("🔍 Analyze Project").clicked() {
+                        self.run_code_analysis();
                     }
+                }
+                
+                ui.separator();
+
+                // Zoom Controls
+                if ui.button("➕").on_hover_text("Zoom In").clicked() {
+                    let mut frame = MetadataFrame::new(None).load(ui);
+                    frame.zoom *= 1.2;
+                    frame.save(ui);
+                }
+                if ui.button("➖").on_hover_text("Zoom Out").clicked() {
+                    let mut frame = MetadataFrame::new(None).load(ui);
+                    frame.zoom /= 1.2;
+                    frame.save(ui);
                 }
                 
                 ui.separator();
@@ -445,15 +538,9 @@ impl App for LogMarkApp {
                 
                 ui.separator();
                 
-                if ui.button("📚 Reset Docs").clicked() {
-                    self.push_undo();
-                    self.graph = default_graph();
-                    self.selected_node = None;
-                    self.layout = AppLayout::Hierarchical;
+                if ui.button("⛶ Fit View").clicked() {
                     self.fit_to_view_next = true;
-                    self.editor_state.last_edited_node = None; // Reset tracked node
-                    self.editor_state.content_buffer.clear();
-                    self.push_toast("Reset to documentation graph");
+                    self.push_toast("Fit to view");
                 }
 
                 if ui.button("❓ Help").clicked() {
@@ -512,6 +599,28 @@ impl App for LogMarkApp {
         self.settings_3d.show(ctx);
         self.settings_3d.update(ctx);
 
+        // Simulation Settings Window
+        if self.show_force_settings && self.layout == AppLayout::Force {
+            let mut open = true;
+            Window::new("Simulation Settings")
+                .open(&mut open)
+                .show(ctx, |ui| {
+                    let mut state = egui_graphs::get_layout_state::<FruchtermanReingoldState>(ui, None);
+                    
+                    ui.checkbox(&mut state.is_running, "Running");
+                    ui.add(egui::Slider::new(&mut state.dt, 0.001..=0.2).text("dt"));
+                    ui.add(egui::Slider::new(&mut state.damping, 0.0..=1.0).text("Damping"));
+                    ui.add(egui::Slider::new(&mut state.max_step, 0.1..=50.0).text("Max Step"));
+                    ui.add(egui::Slider::new(&mut state.c_attract, 0.01..=10.0).text("Attraction"));
+                    ui.add(egui::Slider::new(&mut state.c_repulse, 0.01..=10.0).text("Repulsion"));
+                    
+                    egui_graphs::set_layout_state(ui, state, None);
+                });
+             if !open {
+                 self.show_force_settings = false;
+             }
+        }
+
         // Zen Mode Toggle (Escape to exit)
         if self.zen_mode {
             if ctx.input(|i| i.key_pressed(Key::Escape)) {
@@ -527,7 +636,6 @@ impl App for LogMarkApp {
                 .default_width(220.0)
                 .show(ctx, |ui| {
                     ui.heading("Options");
-                    ui.separator();
                     if ui.button("Zen Mode (Esc)").clicked() {
                         self.zen_mode = true;
                         self.push_toast("Zen Mode (Esc to exit)");
@@ -547,6 +655,11 @@ impl App for LogMarkApp {
                     .on_hover_text("Scatter nodes unpredictably");
                 ui.radio_value(&mut self.layout, AppLayout::Force, "Force")
                     .on_hover_text("Physics-based layout");
+                if self.layout == AppLayout::Force {
+                    if ui.button("⚙ Simulation").clicked() {
+                        self.show_force_settings = !self.show_force_settings;
+                    }
+                }
                 ui.radio_value(&mut self.layout, AppLayout::Hierarchical, "Hierarchical")
                     .on_hover_text("Tree view that fills the canvas");
 
@@ -652,14 +765,20 @@ impl App for LogMarkApp {
                     }
                     ui.separator();
                     ui.label("Variables:");
-                    egui::ScrollArea::vertical().max_height(100.0).show(ui, |ui| {
+                    egui::ScrollArea::vertical()
+                        .id_salt("lua_debugger_vars")
+                        .max_height(100.0)
+                        .show(ui, |ui| {
                         for (k, v) in &self.lua_engine.variables {
                             ui.label(format!("{} = {}", k, v));
                         }
                     });
                     ui.separator();
                     ui.label("Output:");
-                    egui::ScrollArea::vertical().max_height(150.0).show(ui, |ui| {
+                    egui::ScrollArea::vertical()
+                        .id_salt("lua_debugger_output")
+                        .max_height(150.0)
+                        .show(ui, |ui| {
                         ui.monospace(&self.lua_engine.output);
                     });
                     ui.label("CPU Time: 0.5 ms");
@@ -971,9 +1090,9 @@ impl App for LogMarkApp {
                         self.selected_node = None;
                     }
 
-                    // Apply 3D projection if enabled
-                    if self.visualization_mode == VisualizationMode::ThreeD {
-                        ui.label("3D View is experimental. Use standard layouts for editing.");
+                    // Code Analysis overlay
+                    if self.visualization_mode == VisualizationMode::CodeAnalysis {
+                        ui.label("Code Analysis Mode. Click 'Analyze Project' to scan.");
                     }
                 }
                 

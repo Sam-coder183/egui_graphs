@@ -22,6 +22,17 @@ pub struct LogNode {
     pub dragged: bool,
     pub hovered: bool,
     pub radius: f32,
+    pub payload: LogNodeData,
+}
+
+impl LogNode {
+    pub fn payload(&self) -> &LogNodeData {
+        &self.payload
+    }
+
+    pub fn payload_mut(&mut self) -> &mut LogNodeData {
+        &mut self.payload
+    }
 }
 
 impl From<NodeProps<LogNodeData>> for LogNode {
@@ -33,6 +44,7 @@ impl From<NodeProps<LogNodeData>> for LogNode {
             dragged: node_props.dragged,
             hovered: node_props.hovered,
             radius: 30.0,
+            payload: node_props.payload,
         }
     }
 }
@@ -99,6 +111,7 @@ impl DisplayNode<LogNodeData, LogEdgeData, Directed, u32> for LogNode {
         self.dragged = state.dragged;
         self.hovered = state.hovered;
         self.label = state.payload.label.clone();
+        self.payload = state.payload.clone();
     }
 }
 

@@ -8,6 +8,7 @@ pub mod persistence;
 pub mod lua;
 pub mod actions;
 pub mod ui;
+pub mod analyzer;
 
 pub use app::LogMarkApp;
 

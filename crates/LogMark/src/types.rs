@@ -21,14 +21,14 @@ pub enum AppTab {
 #[derive(PartialEq, Clone, Copy)]
 pub enum VisualizationMode {
     TwoD,
-    ThreeD,
+    CodeAnalysis,
 }
 
 impl VisualizationMode {
     pub fn label(&self) -> &str {
         match self {
-            VisualizationMode::TwoD => "2D View",
-            VisualizationMode::ThreeD => "3D View",
+            VisualizationMode::TwoD => "Documentation View 📝",
+            VisualizationMode::CodeAnalysis => "Code Analysis",
         }
     }
 }

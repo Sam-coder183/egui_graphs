@@ -45,7 +45,7 @@ impl EditorState {
                 ("---", "Divider", "---\n|"),
                 ("**", "Bold", "**|**"),
                 ("*", "Italic", "*|*"),
-                ("~~", "Strikethrough", "~~|~~"),
+                ("~~", "Strikethrough", "~~~~\n|"),
                 ("📝", "Lua Block", "```lua\n|\n```"),
                 ("🔧", "Lua: Add Node", "```lua\ngraph.add_node('|')\n```"),
                 ("🔗", "Lua: Add Edge", "```lua\ngraph.add_edge('from', 'to', '|')\n```"),

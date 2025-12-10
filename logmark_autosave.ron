@@ -6,7 +6,7 @@
                 props: (
                     payload: (
                         label: "Start",
-                        content: "# Start Here\n\nThis is your new graph. Double-click to edit this node, or use the Quick Add panel on the left to create more nodes.\n\nTry typing `/` in the edit tab to see the slash menu!\n\n",
+                        content: "# Start Here\n\nThis is your new graph. Double-click to edit this node, or use the Quick Add panel on the left to create more nodes.\n\nTry typing `/` in the edit tab to see the slash menu!\n\n- [ ] \n###   \n-\n`hola que tal `\n/ ",
                     ),
                     label: "node 0",
                     selected: false,
@@ -14,14 +14,14 @@
                     hovered: false,
                     color: None,
                     location: (
-                        x: -8.505952,
-                        y: -14.997777,
+                        x: 14.271648,
+                        y: -21.05318,
                     ),
                 ),
                 display: (
                     pos: (
-                        x: -8.505952,
-                        y: -14.997777,
+                        x: 14.271648,
+                        y: -21.05318,
                     ),
                     label: "Start",
                     selected: false,
@@ -42,12 +42,12 @@
     hovered_node: None,
     bounds: (
         min: (
-            x: -38.50595,
-            y: -44.997776,
+            x: -15.728352,
+            y: -51.05318,
         ),
         max: (
-            x: 21.49405,
-            y: 15.002223,
+            x: 44.27165,
+            y: 8.946819,
         ),
     ),
 )
