@@ -1,7 +1,8 @@
 use eframe::App;
-use egui::{Context, SidePanel, CentralPanel, TopBottomPanel, Window, Align2, Key};
+use egui::{Context, SidePanel, CentralPanel, TopBottomPanel, Window, Align2, Key, Pos2};
 use std::time::{Duration, Instant};
 use std::path::Path;
+use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use petgraph::graph::EdgeIndex;
 #[cfg(not(target_arch = "wasm32"))]
 use std::fs;
@@ -314,6 +315,85 @@ impl LogMarkApp {
         }
     }
 
+    fn apply_hierarchical_layout(&mut self) {
+        use petgraph::Direction::{Incoming, Outgoing};
+
+        let graph_ref = self.graph.g();
+        let node_indices: Vec<_> = graph_ref.node_indices().collect();
+        if node_indices.is_empty() {
+            return;
+        }
+
+        let mut indegree: HashMap<petgraph::stable_graph::NodeIndex, usize> = HashMap::new();
+        for idx in &node_indices {
+            let count = graph_ref.neighbors_directed(*idx, Incoming).count();
+            indegree.insert(*idx, count);
+        }
+
+        let mut depth: HashMap<petgraph::stable_graph::NodeIndex, usize> = HashMap::new();
+        let mut queue: VecDeque<_> = node_indices
+            .iter()
+            .copied()
+            .filter(|idx| indegree.get(idx).copied().unwrap_or(0) == 0)
+            .collect();
+        if queue.is_empty() {
+            queue = node_indices.iter().copied().collect();
+        }
+
+        let mut visited = HashSet::new();
+        while let Some(node_idx) = queue.pop_front() {
+            let current_layer = *depth.get(&node_idx).unwrap_or(&0);
+            visited.insert(node_idx);
+
+            for neighbor in graph_ref.neighbors_directed(node_idx, Outgoing) {
+                let entry = indegree.entry(neighbor).or_insert(0);
+                if *entry > 0 {
+                    *entry -= 1;
+                }
+                depth
+                    .entry(neighbor)
+                    .and_modify(|layer| *layer = (*layer).max(current_layer + 1))
+                    .or_insert(current_layer + 1);
+                if *entry == 0 && !visited.contains(&neighbor) {
+                    queue.push_back(neighbor);
+                }
+            }
+        }
+
+        let mut max_depth = depth.values().copied().max().unwrap_or(0);
+        for idx in &node_indices {
+            depth.entry(*idx).or_insert_with(|| {
+                max_depth += 1;
+                max_depth
+            });
+        }
+
+        let mut layers: BTreeMap<usize, Vec<petgraph::stable_graph::NodeIndex>> = BTreeMap::new();
+        for idx in &node_indices {
+            let layer = depth.get(idx).copied().unwrap_or(0);
+            layers.entry(layer).or_default().push(*idx);
+        }
+
+        let row_spacing = 100.0;
+        let col_spacing = 100.0;
+
+        for (layer, mut nodes) in layers {
+            nodes.sort_unstable_by_key(|idx| idx.index());
+            let width = if nodes.len() > 1 {
+                (nodes.len() - 1) as f32 * col_spacing
+            } else {
+                0.0
+            };
+            let y = layer as f32 * row_spacing;
+            for (i, idx) in nodes.iter().enumerate() {
+                if let Some(node) = self.graph.node_mut(*idx) {
+                    let x = -width / 2.0 + i as f32 * col_spacing;
+                    node.set_location(Pos2::new(x, y));
+                }
+            }
+        }
+    }
+
     fn run_code_analysis(&mut self) {
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -538,11 +618,6 @@ impl App for LogMarkApp {
                 
                 ui.separator();
                 
-                if ui.button("⛶ Fit View").clicked() {
-                    self.fit_to_view_next = true;
-                    self.push_toast("Fit to view");
-                }
-
                 if ui.button("❓ Help").clicked() {
                     self.show_help = true;
                 }
@@ -655,17 +730,24 @@ impl App for LogMarkApp {
                     .on_hover_text("Scatter nodes unpredictably");
                 ui.radio_value(&mut self.layout, AppLayout::Force, "Force")
                     .on_hover_text("Physics-based layout");
-                if self.layout == AppLayout::Force {
-                    if ui.button("⚙ Simulation").clicked() {
-                        self.show_force_settings = !self.show_force_settings;
-                    }
+                
+                if ui.radio_value(&mut self.layout, AppLayout::Hierarchical, "Hierarchical")
+                    .on_hover_text("Tree view that fills the canvas")
+                    .clicked()
+                {
+                    self.apply_hierarchical_layout();
+                    self.fit_to_view_next = true;
                 }
-                ui.radio_value(&mut self.layout, AppLayout::Hierarchical, "Hierarchical")
-                    .on_hover_text("Tree view that fills the canvas");
 
                 if ui.button("Fit View").clicked() {
                     self.fit_to_view_next = true;
                     self.push_toast("Fitting view");
+                }
+
+                if self.layout == AppLayout::Force {
+                    if ui.button("⚙ Simulation").clicked() {
+                        self.show_force_settings = !self.show_force_settings;
+                    }
                 }
 
                 ui.separator();
@@ -1048,7 +1130,7 @@ impl App for LogMarkApp {
                             ui.add(&mut graph_view)
                         },
                         AppLayout::Hierarchical => {
-                            let mut graph_view = GraphView::<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge, LayoutStateHierarchical, LayoutHierarchical>::new(&mut self.graph)
+                            let mut graph_view = GraphView::<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge, LayoutStateRandom, LayoutRandom>::new(&mut self.graph)
                                 .with_interactions(&settings_interaction)
                                 .with_navigations(&settings_navigation)
                                 .with_event_sink(&sink);
