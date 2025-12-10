@@ -19,6 +19,7 @@ pub struct EditorState {
     pub parser: MarkdownParser,
     pub completer: Completer,
     pub last_edited_node: Option<petgraph::stable_graph::NodeIndex>,
+    pub editor_id: Option<Id>,
 }
 
 impl EditorState {
@@ -56,6 +57,7 @@ impl EditorState {
             parser: MarkdownParser::new(),
             completer: Completer::new_with_syntax(&syntax::markdown()).with_user_words(),
             last_edited_node: None,
+            editor_id: None,
         }
     }
 
@@ -70,6 +72,75 @@ impl EditorState {
     ) {
         let mut current_cursor_idx = 0;
         
+        // Pre-calculate filtered items for navigation logic
+        let filtered_items: Vec<_> = self.slash_menu_items.iter()
+            .filter(|(_, label, _)| {
+                self.slash_menu_query.is_empty() || 
+                label.to_lowercase().contains(&self.slash_menu_query.to_lowercase())
+            })
+            .cloned()
+            .collect();
+
+        // Handle Slash Menu Input BEFORE Editor
+        let mut action_insert = false;
+        if self.slash_menu_open {
+            // Update cursor position from previous frame if possible
+            if let Some(id) = self.editor_id {
+                if let Some(state) = TextEdit::load_state(ui.ctx(), id) {
+                    if let Some(range) = state.cursor.char_range() {
+                        self.cursor_position = range.primary.index;
+                        current_cursor_idx = self.cursor_position;
+                    }
+                }
+            }
+
+            let mut action_nav_down = false;
+            let mut action_nav_up = false;
+            let mut action_escape = false;
+
+            ui.input_mut(|i| {
+                if i.key_pressed(egui::Key::ArrowDown) {
+                    action_nav_down = true;
+                    i.consume_key(egui::Modifiers::NONE, egui::Key::ArrowDown);
+                }
+                if i.key_pressed(egui::Key::ArrowUp) {
+                    action_nav_up = true;
+                    i.consume_key(egui::Modifiers::NONE, egui::Key::ArrowUp);
+                }
+                if i.key_pressed(egui::Key::Enter) || i.key_pressed(egui::Key::Tab) {
+                    action_insert = true;
+                    i.consume_key(egui::Modifiers::NONE, egui::Key::Enter);
+                    i.consume_key(egui::Modifiers::NONE, egui::Key::Tab);
+                }
+                if i.key_pressed(egui::Key::Escape) {
+                    action_escape = true;
+                    i.consume_key(egui::Modifiers::NONE, egui::Key::Escape);
+                }
+            });
+
+            if !filtered_items.is_empty() {
+                if action_nav_down {
+                    self.slash_menu_selection = (self.slash_menu_selection + 1) % filtered_items.len();
+                }
+                if action_nav_up {
+                    if self.slash_menu_selection == 0 {
+                        self.slash_menu_selection = filtered_items.len() - 1;
+                    } else {
+                        self.slash_menu_selection -= 1;
+                    }
+                }
+            }
+            
+            if action_escape {
+                self.slash_menu_open = false;
+            }
+        }
+
+        // Execute insert action if triggered via keyboard
+        if action_insert {
+             self.insert_slash_template(node_idx, graph, change_count, wikilink_regex, current_cursor_idx);
+        }
+        
         ScrollArea::both()
             .auto_shrink([false, false])
             .show(ui, |ui| {
@@ -81,6 +152,9 @@ impl EditorState {
                 .show_with_completer(ui, &mut self.content_buffer, &mut self.completer)
                 .response;
             
+            // Store the editor ID for next frame
+            self.editor_id = Some(response.id);
+
             // Detect slash key press and open menu
             // Only process changes if this is a real user edit, not just syncing to a new node
             if response.changed() && !just_synced {
@@ -153,18 +227,8 @@ impl EditorState {
         // Slash Menu Popup
         if self.slash_menu_open {
             if let Some(pos) = self.slash_menu_pos {
-                let filtered_items: Vec<_> = self.slash_menu_items.iter()
-                    .filter(|(_, label, _)| {
-                        self.slash_menu_query.is_empty() || 
-                        label.to_lowercase().contains(&self.slash_menu_query.to_lowercase())
-                    })
-                    .cloned()
-                    .collect();
+                // filtered_items is already calculated at the top
 
-                let mut action_nav_down = false;
-                let mut action_nav_up = false;
-                let mut action_insert = false;
-                let mut action_escape = false;
                 let mut action_click_idx = None;
 
                 if !filtered_items.is_empty() {
@@ -176,19 +240,7 @@ impl EditorState {
                                 ui.set_max_width(200.0);
                                 ui.set_max_height(300.0);
                                 
-                                // Handle keyboard navigation
-                                if ui.input(|i| i.key_pressed(egui::Key::ArrowDown)) {
-                                    action_nav_down = true;
-                                }
-                                if ui.input(|i| i.key_pressed(egui::Key::ArrowUp)) {
-                                    action_nav_up = true;
-                                }
-                                if ui.input(|i| i.key_pressed(egui::Key::Enter) || i.key_pressed(egui::Key::Tab)) {
-                                    action_insert = true;
-                                }
-                                if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
-                                    action_escape = true;
-                                }
+                                // Keyboard navigation handled at top of function
 
                                 ScrollArea::vertical().show(ui, |ui| {
                                     for (i, (icon, label, _)) in filtered_items.iter().enumerate() {
@@ -217,24 +269,9 @@ impl EditorState {
                         });
                 }
 
-                if action_nav_down {
-                    self.slash_menu_selection = (self.slash_menu_selection + 1) % filtered_items.len();
-                }
-                if action_nav_up {
-                    if self.slash_menu_selection == 0 {
-                        self.slash_menu_selection = filtered_items.len() - 1;
-                    } else {
-                        self.slash_menu_selection -= 1;
-                    }
-                }
-                if action_escape {
-                    self.slash_menu_open = false;
-                }
                 if let Some(idx) = action_click_idx {
                     self.slash_menu_selection = idx;
-                    action_insert = true;
-                }
-                if action_insert {
+                    // Click action needs to be handled here
                     self.insert_slash_template(node_idx, graph, change_count, wikilink_regex, current_cursor_idx);
                 }
             }

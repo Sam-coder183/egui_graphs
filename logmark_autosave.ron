@@ -6,114 +6,24 @@
                 props: (
                     payload: (
                         label: "Start",
-                        content: "# Start Here\n\nThis is your new graph. Double-click to edit this node, \nor use the Quick Add panel on the left to create more nodes.\n\nTry typing `/` in the edit tab to see the slash menu!\n\n\n[[nuevo nodo]]\n\n[[recetas]]\n\n\n[[prueba]]\n\n\n\n\n",
+                        content: "# Start Here\n\nThis is your new graph. Double-click to edit this node, or use the Quick Add panel on the left to create more nodes.\n\nTry typing `/` in the edit tab to see the slash menu!\n\n",
                     ),
                     label: "node 0",
-                    selected: true,
+                    selected: false,
                     dragged: false,
                     hovered: false,
                     color: None,
                     location: (
-                        x: -20.409922,
-                        y: -167.81735,
+                        x: -8.505952,
+                        y: -14.997777,
                     ),
                 ),
                 display: (
                     pos: (
-                        x: -20.409922,
-                        y: -167.81735,
+                        x: -8.505952,
+                        y: -14.997777,
                     ),
                     label: "Start",
-                    selected: true,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(1),
-                props: (
-                    payload: (
-                        label: "nuevo nodo",
-                        content: "# nuevo nodo",
-                    ),
-                    label: "node 1",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 844.045,
-                        y: -159.86377,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 844.045,
-                        y: -159.86377,
-                    ),
-                    label: "nuevo nodo",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(2),
-                props: (
-                    payload: (
-                        label: "recetas",
-                        content: "# recetas",
-                    ),
-                    label: "node 2",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: -820.6125,
-                        y: 308.43903,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: -820.6125,
-                        y: 308.43903,
-                    ),
-                    label: "recetas",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(3),
-                props: (
-                    payload: (
-                        label: "prueba",
-                        content: "# prueba",
-                    ),
-                    label: "node 3",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 29.590078,
-                        y: -117.81735,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 29.590078,
-                        y: -117.81735,
-                    ),
-                    label: "prueba",
                     selected: false,
                     dragged: false,
                     hovered: false,
@@ -124,77 +34,20 @@
         ],
         node_holes: [],
         edge_property: directed,
-        edges: [
-            Some((0, 1, (
-                id: Some(0),
-                display: (
-                    selected: false,
-                    label: Some("links to"),
-                    cardinality: None,
-                ),
-                props: (
-                    payload: (
-                        label: Some("links to"),
-                        cardinality: None,
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 0",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 2, (
-                id: Some(1),
-                display: (
-                    selected: false,
-                    label: Some("links to"),
-                    cardinality: None,
-                ),
-                props: (
-                    payload: (
-                        label: Some("links to"),
-                        cardinality: None,
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 1",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 3, (
-                id: Some(2),
-                display: (
-                    selected: false,
-                    label: Some("links to"),
-                    cardinality: None,
-                ),
-                props: (
-                    payload: (
-                        label: Some("links to"),
-                        cardinality: None,
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 2",
-                ),
-                _marker: (),
-            ))),
-        ],
+        edges: [],
     ),
-    selected_nodes: [
-        0,
-    ],
+    selected_nodes: [],
     selected_edges: [],
     dragged_node: None,
     hovered_node: None,
     bounds: (
         min: (
-            x: -850.6125,
-            y: -197.81735,
+            x: -38.50595,
+            y: -44.997776,
         ),
         max: (
-            x: 874.045,
-            y: 338.43903,
+            x: 21.49405,
+            y: 15.002223,
         ),
     ),
 )

@@ -6,25 +6,25 @@
                 props: (
                     payload: (
                         label: "Start",
-                        content: "# Start Here\n# hola que tal\n/  \nThis is your new graph. Double-click to edit this node, or use the Quick Add panel on the left to create more nodes.\n\nTry typing `/` in the edit tab to see the slash menu!\n\n- [ ] \n\n\n[\n",
+                        content: "# Start Here\n\n\nThis is your new graph. Double-click to edit this node, or use the Quick Add panel on the left to create more nodes.\n\nTry typing `/` in the edit tab to see the slash menu!\n\n\n****\n\n\n- [x] ",
                     ),
                     label: "node 0",
-                    selected: true,
+                    selected: false,
                     dragged: false,
                     hovered: false,
                     color: None,
                     location: (
-                        x: -5.76995,
-                        y: -0.12943782,
+                        x: -6.065056,
+                        y: -7.4506903,
                     ),
                 ),
                 display: (
                     pos: (
-                        x: -5.76995,
-                        y: -0.12943782,
+                        x: -6.065056,
+                        y: -7.4506903,
                     ),
                     label: "Start",
-                    selected: true,
+                    selected: false,
                     dragged: false,
                     hovered: false,
                     radius: 30.0,
@@ -36,20 +36,18 @@
         edge_property: directed,
         edges: [],
     ),
-    selected_nodes: [
-        0,
-    ],
+    selected_nodes: [],
     selected_edges: [],
     dragged_node: None,
     hovered_node: None,
     bounds: (
         min: (
-            x: -35.76995,
-            y: -30.129438,
+            x: -36.065056,
+            y: -37.45069,
         ),
         max: (
-            x: 24.23005,
-            y: 29.870562,
+            x: 23.934944,
+            y: 22.549309,
         ),
     ),
 )
