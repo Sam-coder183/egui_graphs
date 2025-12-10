@@ -1,5 +1,5 @@
 use egui::{Ui, TextEdit, ScrollArea, Id, Color32, Frame, Align};
-use egui_code_editor::{CodeEditor, ColorTheme, Completer};
+use egui_code_editor::Completer;
 use crate::parser::MarkdownParser;
 use crate::syntax;
 use crate::graph::{LogNode, LogEdge, LogNodeData, LogEdgeData};
@@ -144,13 +144,13 @@ impl EditorState {
         ScrollArea::both()
             .auto_shrink([false, false])
             .show(ui, |ui| {
-            let response = CodeEditor::default()
-                .id_source(format!("content_editor_{}", node_idx.index()))
-                .with_syntax(syntax::markdown())
-                .with_fontsize(14.0)
-                .with_theme(ColorTheme::GRUVBOX)
-                .show_with_completer(ui, &mut self.content_buffer, &mut self.completer)
-                .response;
+            let response = ui.add(
+                TextEdit::multiline(&mut self.content_buffer)
+                    .id_source(format!("content_editor_{}", node_idx.index()))
+                    .font(egui::TextStyle::Monospace)
+                    .lock_focus(true)
+                    .desired_width(f32::INFINITY)
+            );
             
             // Store the editor ID for next frame
             self.editor_id = Some(response.id);

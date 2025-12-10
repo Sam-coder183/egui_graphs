@@ -3,10 +3,19 @@ use egui_graphs::Graph;
 use petgraph::{stable_graph::StableGraph, Directed};
 use ron::de::from_str;
 use ron::ser::{to_string_pretty, PrettyConfig};
+use serde::{Deserialize, Serialize};
 #[cfg(not(target_arch = "wasm32"))]
 use std::{fs, path::PathBuf};
 #[cfg(target_arch = "wasm32")]
 use web_sys::Storage;
+
+pub type LogGraph = Graph<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge>;
+
+#[derive(Serialize, Deserialize)]
+pub struct ProjectState {
+    pub doc_graph: LogGraph,
+    pub code_graph: LogGraph,
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn autosave_path() -> PathBuf {
@@ -29,7 +38,7 @@ pub fn default_graph_path() -> PathBuf {
     PathBuf::from("assets/default_graph.ron")
 }
 
-pub fn default_graph() -> Graph<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge> {
+pub fn default_graph() -> LogGraph {
     // First, try to load from external file
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -50,7 +59,7 @@ pub fn default_graph() -> Graph<LogNodeData, LogEdgeData, Directed, u32, LogNode
     hardcoded_default_graph()
 }
 
-pub fn hardcoded_default_graph() -> Graph<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge> {
+pub fn hardcoded_default_graph() -> LogGraph {
     let mut g = StableGraph::new();
 
     let overview = g.add_node(LogNodeData {
@@ -112,17 +121,27 @@ pub fn hardcoded_default_graph() -> Graph<LogNodeData, LogEdgeData, Directed, u3
     graph
 }
 
-pub fn load_autosave() -> Option<Graph<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge>> {
+pub fn load_autosave() -> Option<ProjectState> {
     #[cfg(not(target_arch = "wasm32"))]
     {
         let path = autosave_path();
         if path.exists() {
             match fs::read_to_string(&path) {
                 Ok(content) => {
-                    match from_str(&content) {
+                    // Try loading as ProjectState first
+                    if let Ok(state) = from_str::<ProjectState>(&content) {
+                        println!("Loaded project state from {}", path.display());
+                        return Some(state);
+                    }
+                    // Fallback: try loading as single Graph (legacy)
+                    match from_str::<LogGraph>(&content) {
                         Ok(graph) => {
-                            println!("Loaded autosave from {}", path.display());
-                            return Some(graph);
+                            println!("Loaded legacy graph from {}", path.display());
+                            // Convert to ProjectState with empty code graph
+                            return Some(ProjectState {
+                                doc_graph: graph,
+                                code_graph: Graph::from(&StableGraph::new()),
+                            });
                         },
                         Err(e) => eprintln!("Failed to deserialize autosave: {}", e),
                     }
@@ -136,8 +155,14 @@ pub fn load_autosave() -> Option<Graph<LogNodeData, LogEdgeData, Directed, u32, 
     {
         if let Some(storage) = web_storage() {
             if let Ok(Some(content)) = storage.get_item("logmark_autosave") {
-                if let Ok(graph) = from_str(&content) {
-                    return Some(graph);
+                if let Ok(state) = from_str::<ProjectState>(&content) {
+                    return Some(state);
+                }
+                if let Ok(graph) = from_str::<LogGraph>(&content) {
+                    return Some(ProjectState {
+                        doc_graph: graph,
+                        code_graph: Graph::from(&StableGraph::new()),
+                    });
                 }
             }
         }
@@ -145,12 +170,12 @@ pub fn load_autosave() -> Option<Graph<LogNodeData, LogEdgeData, Directed, u32, 
     None
 }
 
-pub fn commit_changes(graph: &Graph<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge>) {
+pub fn commit_changes(state: &ProjectState) {
     #[cfg(not(target_arch = "wasm32"))]
     {
         let path = autosave_path();
         let config = PrettyConfig::default();
-        match to_string_pretty(graph, config) {
+        match to_string_pretty(state, config) {
             Ok(data) => {
                 if let Err(err) = fs::write(&path, data) {
                     eprintln!("Auto-commit write failed: {}", err);
@@ -164,7 +189,7 @@ pub fn commit_changes(graph: &Graph<LogNodeData, LogEdgeData, Directed, u32, Log
     {
         if let Some(storage) = web_storage() {
             let config = PrettyConfig::default();
-            if let Ok(data) = to_string_pretty(graph, config) {
+            if let Ok(data) = to_string_pretty(state, config) {
                 let _ = storage.set_item("logmark_autosave", &data);
             }
         }

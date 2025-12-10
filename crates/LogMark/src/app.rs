@@ -120,16 +120,22 @@ pub struct LogMarkApp {
 
     // Force Layout Settings
     show_force_settings: bool,
+
+    // Secondary graph storage (for swapping between views)
+    secondary_graph: Graph<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge>,
 }
 
 impl LogMarkApp {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        let graph = load_autosave()
-            .filter(|g| g.node_count() >= 3)
-            .unwrap_or_else(default_graph);
+        let (graph, secondary_graph) = if let Some(state) = load_autosave() {
+            (state.doc_graph, state.code_graph)
+        } else {
+            (default_graph(), Graph::from(&StableGraph::new()))
+        };
 
         Self {
             graph,
+            secondary_graph,
             settings_window: SettingsWindow::default(),
             show_force_settings: false,
             editing_label: None,
@@ -179,14 +185,21 @@ impl LogMarkApp {
     fn poll_wasm_import(&mut self) {
         if let Some(storage) = crate::persistence::web_storage() {
             if let Ok(Some(content)) = storage.get_item("logmark_import") {
-                match from_str(&content) {
-                    Ok(graph) => {
-                        self.graph = graph;
-                        self.push_toast("Imported graph");
+                if let Ok(state) = from_str::<crate::persistence::ProjectState>(&content) {
+                    if self.visualization_mode == VisualizationMode::TwoD {
+                        self.graph = state.doc_graph;
+                        self.secondary_graph = state.code_graph;
+                    } else {
+                        self.graph = state.code_graph;
+                        self.secondary_graph = state.doc_graph;
                     }
-                    Err(err) => {
-                        self.push_toast(format!("Import failed: {}", err));
-                    }
+                    self.push_toast("Imported project");
+                } else if let Ok(graph) = from_str::<crate::persistence::LogGraph>(&content) {
+                    self.graph = graph;
+                    self.secondary_graph = Graph::from(&StableGraph::new());
+                    self.push_toast("Imported legacy graph");
+                } else {
+                    self.push_toast(format!("Import failed"));
                 }
                 let _ = storage.remove_item("logmark_import");
             }
@@ -195,8 +208,19 @@ impl LogMarkApp {
 
     #[cfg(target_arch = "wasm32")]
     fn web_export_ron(&self) {
+        let state = if self.visualization_mode == VisualizationMode::TwoD {
+            crate::persistence::ProjectState {
+                doc_graph: self.graph.clone(),
+                code_graph: self.secondary_graph.clone(),
+            }
+        } else {
+            crate::persistence::ProjectState {
+                doc_graph: self.secondary_graph.clone(),
+                code_graph: self.graph.clone(),
+            }
+        };
         let config = PrettyConfig::default();
-        if let Ok(data) = to_string_pretty(&self.graph, config) {
+        if let Ok(data) = to_string_pretty(&state, config) {
             if let Some(window) = web_sys::window() {
                 if let Some(document) = window.document() {
                     let array = Array::new();
@@ -471,7 +495,18 @@ impl App for LogMarkApp {
     fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
         // Auto-commit check
         if self.change_count > 10 {
-            commit_changes(&self.graph);
+            let state = if self.visualization_mode == VisualizationMode::TwoD {
+                crate::persistence::ProjectState {
+                    doc_graph: self.graph.clone(),
+                    code_graph: self.secondary_graph.clone(),
+                }
+            } else {
+                crate::persistence::ProjectState {
+                    doc_graph: self.secondary_graph.clone(),
+                    code_graph: self.graph.clone(),
+                }
+            };
+            commit_changes(&state);
             self.change_count = 0;
         }
 
@@ -526,12 +561,25 @@ impl App for LogMarkApp {
                 ui.separator();
                 
                 // Visualization Mode ComboBox
+                let prev_mode = self.visualization_mode;
                 egui::ComboBox::from_label("View")
                     .selected_text(self.visualization_mode.label())
                     .show_ui(ui, |ui| {
                         ui.selectable_value(&mut self.visualization_mode, VisualizationMode::TwoD, "Documentation View 📝");
                         ui.selectable_value(&mut self.visualization_mode, VisualizationMode::CodeAnalysis, "Code Analysis");
                     });
+                
+                if prev_mode != self.visualization_mode {
+                    // Swap graphs
+                    std::mem::swap(&mut self.graph, &mut self.secondary_graph);
+                    // Clear selection and undo stack to avoid confusion
+                    self.selected_node = None;
+                    self.graph.set_selected_nodes(vec![]);
+                    self.undo_stack.clear();
+                    self.redo_stack.clear();
+                    self.fit_to_view_next = true;
+                    self.push_toast(format!("Switched to {}", self.visualization_mode.label()));
+                }
                 
                 if self.visualization_mode == VisualizationMode::CodeAnalysis {
                     if ui.button("🔍 Analyze Project").clicked() {
@@ -580,11 +628,23 @@ impl App for LogMarkApp {
                     {
                         if let Some(path) = FileDialog::new().add_filter("RON", &["ron"]).pick_file() {
                             if let Ok(content) = fs::read_to_string(&path) {
-                                if let Ok(graph) = from_str(&content) {
+                                if let Ok(state) = from_str::<crate::persistence::ProjectState>(&content) {
+                                    self.push_undo();
+                                    if self.visualization_mode == VisualizationMode::TwoD {
+                                        self.graph = state.doc_graph;
+                                        self.secondary_graph = state.code_graph;
+                                    } else {
+                                        self.graph = state.code_graph;
+                                        self.secondary_graph = state.doc_graph;
+                                    }
+                                    self.selected_node = None;
+                                    self.push_toast("Opened project");
+                                } else if let Ok(graph) = from_str::<crate::persistence::LogGraph>(&content) {
                                     self.push_undo();
                                     self.graph = graph;
+                                    self.secondary_graph = Graph::from(&StableGraph::new());
                                     self.selected_node = None;
-                                    self.push_toast("Opened graph");
+                                    self.push_toast("Opened legacy graph");
                                 } else {
                                     self.push_toast("Failed to parse graph");
                                 }
@@ -600,8 +660,20 @@ impl App for LogMarkApp {
                     #[cfg(not(target_arch = "wasm32"))]
                     {
                         if let Some(path) = FileDialog::new().add_filter("RON", &["ron"]).save_file() {
+                            let state = if self.visualization_mode == VisualizationMode::TwoD {
+                                crate::persistence::ProjectState {
+                                    doc_graph: self.graph.clone(),
+                                    code_graph: self.secondary_graph.clone(),
+                                }
+                            } else {
+                                crate::persistence::ProjectState {
+                                    doc_graph: self.secondary_graph.clone(),
+                                    code_graph: self.graph.clone(),
+                                }
+                            };
+
                             let config = PrettyConfig::default();
-                            if let Ok(data) = to_string_pretty(&self.graph, config) {
+                            if let Ok(data) = to_string_pretty(&state, config) {
                                 if let Err(err) = fs::write(path, data) {
                                     self.push_toast(format!("Save failed: {}", err));
                                 } else {
@@ -654,9 +726,20 @@ impl App for LogMarkApp {
                     ui.add_sized(ui.available_size() - egui::Vec2::new(0.0, 60.0), TextEdit::multiline(&mut self.wasm_import_buffer));
                     ui.horizontal(|ui| {
                         if ui.button("Import").clicked() {
-                            if let Ok(graph) = from_str(&self.wasm_import_buffer) {
+                            if let Ok(state) = from_str::<crate::persistence::ProjectState>(&self.wasm_import_buffer) {
+                                if self.visualization_mode == VisualizationMode::TwoD {
+                                    self.graph = state.doc_graph;
+                                    self.secondary_graph = state.code_graph;
+                                } else {
+                                    self.graph = state.code_graph;
+                                    self.secondary_graph = state.doc_graph;
+                                }
+                                self.push_toast("Imported project");
+                                self.wasm_import_open = false;
+                            } else if let Ok(graph) = from_str::<crate::persistence::LogGraph>(&self.wasm_import_buffer) {
                                 self.graph = graph;
-                                self.push_toast("Imported graph");
+                                self.secondary_graph = Graph::from(&StableGraph::new());
+                                self.push_toast("Imported legacy graph");
                                 self.wasm_import_open = false;
                             } else {
                                 self.push_toast("Invalid RON");

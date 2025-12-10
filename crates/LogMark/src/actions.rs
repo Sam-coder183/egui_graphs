@@ -6,6 +6,7 @@ use crate::parser::MarkdownParser;
 use regex::Regex;
 use std::collections::HashMap;
 use egui::Vec2;
+use crate::utils::calculate_edge_cardinality;
 
 pub fn handle_wikilinks(
     graph: &mut Graph<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge>,
@@ -26,7 +27,7 @@ pub fn handle_wikilinks(
         let slice = &content[range];
         for cap in wikilink_regex.captures_iter(slice) {
             if let Some(m) = cap.get(1) {
-                let target_label = m.as_str().to_string();
+                let target_label = m.as_str().to_string().trim().to_string();
                 let edge_label = cap.get(2).map(|m| m.as_str().to_string()).unwrap_or_else(|| "links to".to_string());
                 current_links.insert(target_label, edge_label);
             }
@@ -74,7 +75,7 @@ pub fn handle_wikilinks(
         let mut target_idx = None;
         for idx in graph.g().node_indices() {
             if let Some(node) = graph.node(idx) {
-                if node.payload().label == target_label {
+                if node.payload().label.trim().eq_ignore_ascii_case(target_label.trim()) {
                     target_idx = Some(idx);
                     break;
                 }
@@ -102,13 +103,22 @@ pub fn handle_wikilinks(
         if target_idx == node_idx { continue; }
 
         if let Some(&edge_idx) = existing_targets.get(&target_idx) {
+            // Recalculate cardinality for existing edge
+            let card = calculate_edge_cardinality(graph, node_idx, target_idx);
+            
             if let Some(edge) = graph.edge_mut(edge_idx) {
                 if edge.payload().label.as_ref() != Some(&edge_label) {
                     edge.payload_mut().label = Some(edge_label);
                 }
+                edge.payload_mut().cardinality = Some(card);
             }
         } else {
-            graph.add_edge(node_idx, target_idx, LogEdgeData { label: Some(edge_label), cardinality: None });
+            let edge_idx = graph.add_edge(node_idx, target_idx, LogEdgeData { label: Some(edge_label), cardinality: None });
+            // Calculate cardinality for new edge
+            let card = calculate_edge_cardinality(graph, node_idx, target_idx);
+            if let Some(edge) = graph.edge_mut(edge_idx) {
+                edge.payload_mut().cardinality = Some(card);
+            }
         }
     }
 }

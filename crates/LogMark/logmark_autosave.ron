@@ -1,1268 +1,1452 @@
 (
-    g: (
-        nodes: [
-            (
-                id: Some(0),
-                props: (
-                    payload: (
-                        label: "app.rs",
-                        content: "# File: app.rs\n\n## Structure\n\n- **Struct**: `LogMarkApp`\n- **Impl**: `LogMarkApp`\n- **Fn**: `new`\n- **Fn**: `poll_wasm_import`\n- **Fn**: `web_export_ron`\n- **Fn**: `start_wasm_file_picker`\n- **Fn**: `push_toast`\n- **Fn**: `prune_toasts`\n- **Fn**: `push_undo`\n- **Fn**: `undo`\n- **Fn**: `redo`\n- **Fn**: `run_code_analysis`\n- **Impl**: `LogMarkApp`\n- **Fn**: `update`\n",
+    doc_graph: (
+        g: (
+            nodes: [
+                (
+                    id: Some(0),
+                    props: (
+                        payload: (
+                            label: "Start",
+                            content: "# Start Here\n\nThis is your new graph. Double-click to edit this node, or use the Quick Add panel on the left to create more nodes.\n\nTry typing `/` in the edit tab to see the slash menu!\n\n[[hola]]\n\n[[que tal]]\n\n",
+                        ),
+                        label: "node 0",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -3.1324902,
+                            y: -125.39741,
+                        ),
                     ),
-                    label: "node 0",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: -252.83469,
-                        y: -1214.6285,
+                    display: (
+                        pos: (
+                            x: -3.1324902,
+                            y: -125.39741,
+                        ),
+                        label: "Start",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "Start",
+                            content: "# Start Here\n\nThis is your new graph. Double-click to edit this node, or use the Quick Add panel on the left to create more nodes.\n\nTry typing `/` in the edit tab to see the slash menu!\n\n[[hola]]\n\n[[que tal]]\n\n",
+                        ),
                     ),
+                    _marker: (),
                 ),
-                display: (
-                    pos: (
-                        x: -252.83469,
-                        y: -1214.6285,
+                (
+                    id: Some(1),
+                    props: (
+                        payload: (
+                            label: "hola",
+                            content: "# hola\n\n\n# esto es una prueba ",
+                        ),
+                        label: "node 1",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: 447.24707,
+                            y: 166.69626,
+                        ),
                     ),
-                    label: "app.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "app.rs",
-                        content: "# File: app.rs\n\n## Structure\n\n- **Struct**: `LogMarkApp`\n- **Impl**: `LogMarkApp`\n- **Fn**: `new`\n- **Fn**: `poll_wasm_import`\n- **Fn**: `web_export_ron`\n- **Fn**: `start_wasm_file_picker`\n- **Fn**: `push_toast`\n- **Fn**: `prune_toasts`\n- **Fn**: `push_undo`\n- **Fn**: `undo`\n- **Fn**: `redo`\n- **Fn**: `run_code_analysis`\n- **Impl**: `LogMarkApp`\n- **Fn**: `update`\n",
+                    display: (
+                        pos: (
+                            x: 447.24707,
+                            y: 166.69626,
+                        ),
+                        label: "hola",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "hola",
+                            content: "# hola\n\n\n# esto es una prueba ",
+                        ),
                     ),
+                    _marker: (),
                 ),
-                _marker: (),
-            ),
-            (
-                id: Some(1),
-                props: (
-                    payload: (
-                        label: "analyzer.rs",
-                        content: "# File: analyzer.rs\n\n## Structure\n\n- **Struct**: `FileNode`\n- **Struct**: `ProjectAnalyzer`\n- **Impl**: `ProjectAnalyzer`\n- **Fn**: `new`\n- **Fn**: `analyze_path`\n- **Fn**: `analyze_rust_file`\n- **Fn**: `analyze_python_file`\n",
+                (
+                    id: Some(2),
+                    props: (
+                        payload: (
+                            label: "que tal",
+                            content: "# que tal\n\n[[hola]]\n[[Start]]\n\n\n- [ ] hacer cosas\n**esto esta en negrita** \n",
+                        ),
+                        label: "node 2",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -74.06925,
+                            y: 294.7189,
+                        ),
                     ),
-                    label: "node 1",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: -874.2911,
-                        y: -2488.4348,
+                    display: (
+                        pos: (
+                            x: -74.06925,
+                            y: 294.7189,
+                        ),
+                        label: "que tal",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "que tal",
+                            content: "# que tal\n\n[[hola]]\n[[Start]]\n\n\n- [ ] hacer cosas\n**esto esta en negrita** \n",
+                        ),
                     ),
+                    _marker: (),
                 ),
-                display: (
-                    pos: (
-                        x: -874.2911,
-                        y: -2488.4348,
-                    ),
-                    label: "analyzer.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "analyzer.rs",
-                        content: "# File: analyzer.rs\n\n## Structure\n\n- **Struct**: `FileNode`\n- **Struct**: `ProjectAnalyzer`\n- **Impl**: `ProjectAnalyzer`\n- **Fn**: `new`\n- **Fn**: `analyze_path`\n- **Fn**: `analyze_rust_file`\n- **Fn**: `analyze_python_file`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(2),
-                props: (
-                    payload: (
-                        label: "types.rs",
-                        content: "# File: types.rs\n\n## Structure\n\n- **Enum**: `AppLayout`\n- **Enum**: `QuickTemplate`\n- **Enum**: `AppTab`\n- **Enum**: `VisualizationMode`\n- **Impl**: `VisualizationMode`\n- **Fn**: `label`\n- **Enum**: `SidebarTab`\n- **Enum**: `EditorMode`\n",
-                    ),
-                    label: "node 2",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: -512.87695,
-                        y: -2565.187,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: -512.87695,
-                        y: -2565.187,
-                    ),
-                    label: "types.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "types.rs",
-                        content: "# File: types.rs\n\n## Structure\n\n- **Enum**: `AppLayout`\n- **Enum**: `QuickTemplate`\n- **Enum**: `AppTab`\n- **Enum**: `VisualizationMode`\n- **Impl**: `VisualizationMode`\n- **Fn**: `label`\n- **Enum**: `SidebarTab`\n- **Enum**: `EditorMode`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(3),
-                props: (
-                    payload: (
-                        label: "persistence.rs",
-                        content: "# File: persistence.rs\n\n## Structure\n\n- **Fn**: `autosave_path`\n- **Fn**: `default_graph_path`\n- **Fn**: `default_graph`\n- **Fn**: `hardcoded_default_graph`\n- **Fn**: `load_autosave`\n- **Fn**: `commit_changes`\n- **Fn**: `web_storage`\n",
-                    ),
-                    label: "node 3",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: -881.7806,
-                        y: -2158.3296,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: -881.7806,
-                        y: -2158.3296,
-                    ),
-                    label: "persistence.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "persistence.rs",
-                        content: "# File: persistence.rs\n\n## Structure\n\n- **Fn**: `autosave_path`\n- **Fn**: `default_graph_path`\n- **Fn**: `default_graph`\n- **Fn**: `hardcoded_default_graph`\n- **Fn**: `load_autosave`\n- **Fn**: `commit_changes`\n- **Fn**: `web_storage`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(4),
-                props: (
-                    payload: (
-                        label: "lib.rs",
-                        content: "# File: lib.rs\n\n## Structure\n\n- **Struct**: `GraphSettings`\n- **Struct**: `WebHandle`\n- **Impl**: `WebHandle`\n- **Fn**: `new`\n- **Fn**: `start`\n- **Fn**: `destroy`\n- **Fn**: `has_panicked`\n- **Fn**: `panic_message`\n- **Fn**: `panic_callstack`\n",
-                    ),
-                    label: "node 4",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 405.17838,
-                        y: -1166.4927,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 405.17838,
-                        y: -1166.4927,
-                    ),
-                    label: "lib.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "lib.rs",
-                        content: "# File: lib.rs\n\n## Structure\n\n- **Struct**: `GraphSettings`\n- **Struct**: `WebHandle`\n- **Impl**: `WebHandle`\n- **Fn**: `new`\n- **Fn**: `start`\n- **Fn**: `destroy`\n- **Fn**: `has_panicked`\n- **Fn**: `panic_message`\n- **Fn**: `panic_callstack`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(5),
-                props: (
-                    payload: (
-                        label: "syntax.rs",
-                        content: "# File: syntax.rs\n\n## Structure\n\n- **Fn**: `markdown`\n",
-                    ),
-                    label: "node 5",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 366.14377,
-                        y: -1776.0103,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 366.14377,
-                        y: -1776.0103,
-                    ),
-                    label: "syntax.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "syntax.rs",
-                        content: "# File: syntax.rs\n\n## Structure\n\n- **Fn**: `markdown`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(6),
-                props: (
-                    payload: (
-                        label: "graph.rs",
-                        content: "# File: graph.rs\n\n## Structure\n\n- **Struct**: `LogNodeData`\n- **Struct**: `LogEdgeData`\n- **Struct**: `LogNode`\n- **Impl**: `LogNode`\n- **Fn**: `payload`\n- **Fn**: `payload_mut`\n- **Impl**: `LogNode`\n- **Fn**: `from`\n- **Impl**: `LogNode`\n- **Fn**: `is_inside`\n- **Fn**: `closest_boundary_point`\n- **Fn**: `shapes`\n- **Fn**: `update`\n- **Struct**: `LogEdge`\n- **Impl**: `LogEdge`\n- **Fn**: `from`\n- **Impl**: `LogEdge`\n- **Fn**: `is_inside`\n- **Fn**: `shapes`\n- **Fn**: `update`\n",
-                    ),
-                    label: "node 6",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: -902.9077,
-                        y: -1757.7966,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: -902.9077,
-                        y: -1757.7966,
-                    ),
-                    label: "graph.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "graph.rs",
-                        content: "# File: graph.rs\n\n## Structure\n\n- **Struct**: `LogNodeData`\n- **Struct**: `LogEdgeData`\n- **Struct**: `LogNode`\n- **Impl**: `LogNode`\n- **Fn**: `payload`\n- **Fn**: `payload_mut`\n- **Impl**: `LogNode`\n- **Fn**: `from`\n- **Impl**: `LogNode`\n- **Fn**: `is_inside`\n- **Fn**: `closest_boundary_point`\n- **Fn**: `shapes`\n- **Fn**: `update`\n- **Struct**: `LogEdge`\n- **Impl**: `LogEdge`\n- **Fn**: `from`\n- **Impl**: `LogEdge`\n- **Fn**: `is_inside`\n- **Fn**: `shapes`\n- **Fn**: `update`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(7),
-                props: (
-                    payload: (
-                        label: "settings_window.rs",
-                        content: "# File: settings_window.rs\n\n## Structure\n\n- **Struct**: `SettingsWindow`\n- **Impl**: `SettingsWindow`\n- **Fn**: `default`\n- **Impl**: `SettingsWindow`\n- **Fn**: `show`\n",
-                    ),
-                    label: "node 7",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: -1467.7177,
-                        y: -1755.2455,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: -1467.7177,
-                        y: -1755.2455,
-                    ),
-                    label: "settings_window.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "settings_window.rs",
-                        content: "# File: settings_window.rs\n\n## Structure\n\n- **Struct**: `SettingsWindow`\n- **Impl**: `SettingsWindow`\n- **Fn**: `default`\n- **Impl**: `SettingsWindow`\n- **Fn**: `show`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(8),
-                props: (
-                    payload: (
-                        label: "editor.rs",
-                        content: "# File: editor.rs\n\n## Structure\n\n- **Struct**: `EditorState`\n- **Impl**: `EditorState`\n- **Fn**: `new`\n- **Fn**: `show`\n- **Fn**: `insert_slash_template`\n",
-                    ),
-                    label: "node 8",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 406.41064,
-                        y: -2021.849,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 406.41064,
-                        y: -2021.849,
-                    ),
-                    label: "editor.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "editor.rs",
-                        content: "# File: editor.rs\n\n## Structure\n\n- **Struct**: `EditorState`\n- **Impl**: `EditorState`\n- **Fn**: `new`\n- **Fn**: `show`\n- **Fn**: `insert_slash_template`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(9),
-                props: (
-                    payload: (
-                        label: "help.rs",
-                        content: "# File: help.rs\n\n## Structure\n\n- **Fn**: `show_help_window`\n",
-                    ),
-                    label: "node 9",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: -1454.7587,
-                        y: -1376.674,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: -1454.7587,
-                        y: -1376.674,
-                    ),
-                    label: "help.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "help.rs",
-                        content: "# File: help.rs\n\n## Structure\n\n- **Fn**: `show_help_window`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(10),
-                props: (
-                    payload: (
-                        label: "settings.rs",
-                        content: "# File: settings.rs\n\n## Structure\n\n- **Struct**: `Settings3D`\n- **Impl**: `Settings3D`\n- **Fn**: `default`\n- **Fn**: `show`\n- **Fn**: `update`\n\n\n\n- otros\n",
-                    ),
-                    label: "node 10",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: -782.04974,
-                        y: -793.0148,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: -782.04974,
-                        y: -793.0148,
-                    ),
-                    label: "settings.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "settings.rs",
-                        content: "# File: settings.rs\n\n## Structure\n\n- **Struct**: `Settings3D`\n- **Impl**: `Settings3D`\n- **Fn**: `default`\n- **Fn**: `show`\n- **Fn**: `update`\n\n\n\n- otros\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(11),
-                props: (
-                    payload: (
-                        label: "mod.rs",
-                        content: "# File: mod.rs\n\n## Structure\n\n",
-                    ),
-                    label: "node 11",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: -1474.6016,
-                        y: -937.5621,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: -1474.6016,
-                        y: -937.5621,
-                    ),
-                    label: "mod.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "mod.rs",
-                        content: "# File: mod.rs\n\n## Structure\n\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(12),
-                props: (
-                    payload: (
-                        label: "main.rs",
-                        content: "# File: main.rs\n\n## Structure\n\n- **Fn**: `main`\n- **Fn**: `main`\n",
-                    ),
-                    label: "node 12",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 543.95953,
-                        y: -2041.8804,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 543.95953,
-                        y: -2041.8804,
-                    ),
-                    label: "main.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "main.rs",
-                        content: "# File: main.rs\n\n## Structure\n\n- **Fn**: `main`\n- **Fn**: `main`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(13),
-                props: (
-                    payload: (
-                        label: "lua.rs",
-                        content: "# File: lua.rs\n\n## Structure\n\n- **Struct**: `LuaEngine`\n- **Impl**: `LuaEngine`\n- **Fn**: `new`\n- **Fn**: `run_script`\n",
-                    ),
-                    label: "node 13",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: -335.77222,
-                        y: -760.84424,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: -335.77222,
-                        y: -760.84424,
-                    ),
-                    label: "lua.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "lua.rs",
-                        content: "# File: lua.rs\n\n## Structure\n\n- **Struct**: `LuaEngine`\n- **Impl**: `LuaEngine`\n- **Fn**: `new`\n- **Fn**: `run_script`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(14),
-                props: (
-                    payload: (
-                        label: "parser.rs",
-                        content: "# File: parser.rs\n\n## Structure\n\n- **Struct**: `MarkdownParser`\n- **Impl**: `MarkdownParser`\n- **Fn**: `new`\n- **Fn**: `parse`\n- **Fn**: `is_in_code_block`\n- **Fn**: `get_safe_ranges`\n- **Fn**: `collect_code_ranges`\n",
-                    ),
-                    label: "node 14",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: 240.76591,
-                        y: -2224.2253,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: 240.76591,
-                        y: -2224.2253,
-                    ),
-                    label: "parser.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "parser.rs",
-                        content: "# File: parser.rs\n\n## Structure\n\n- **Struct**: `MarkdownParser`\n- **Impl**: `MarkdownParser`\n- **Fn**: `new`\n- **Fn**: `parse`\n- **Fn**: `is_in_code_block`\n- **Fn**: `get_safe_ranges`\n- **Fn**: `collect_code_ranges`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(15),
-                props: (
-                    payload: (
-                        label: "utils.rs",
-                        content: "# File: utils.rs\n\n## Structure\n\n- **Fn**: `project_3d_to_2d`\n- **Fn**: `calculate_edge_cardinality`\n- **Fn**: `process_wikilinks_for_preview`\n",
-                    ),
-                    label: "node 15",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: -1165.1075,
-                        y: -1715.151,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: -1165.1075,
-                        y: -1715.151,
-                    ),
-                    label: "utils.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "utils.rs",
-                        content: "# File: utils.rs\n\n## Structure\n\n- **Fn**: `project_3d_to_2d`\n- **Fn**: `calculate_edge_cardinality`\n- **Fn**: `process_wikilinks_for_preview`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-            (
-                id: Some(16),
-                props: (
-                    payload: (
-                        label: "actions.rs",
-                        content: "# File: actions.rs\n\n## Structure\n\n- **Fn**: `handle_wikilinks`\n- **Fn**: `cleanup_orphans`\n",
-                    ),
-                    label: "node 16",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    color: None,
-                    location: (
-                        x: -120.565094,
-                        y: -2342.4238,
-                    ),
-                ),
-                display: (
-                    pos: (
-                        x: -120.565094,
-                        y: -2342.4238,
-                    ),
-                    label: "actions.rs",
-                    selected: false,
-                    dragged: false,
-                    hovered: false,
-                    radius: 30.0,
-                    payload: (
-                        label: "actions.rs",
-                        content: "# File: actions.rs\n\n## Structure\n\n- **Fn**: `handle_wikilinks`\n- **Fn**: `cleanup_orphans`\n",
-                    ),
-                ),
-                _marker: (),
-            ),
-        ],
-        node_holes: [],
-        edge_property: directed,
-        edges: [
-            Some((0, 6, (
-                id: Some(0),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
+            ],
+            node_holes: [],
+            edge_property: directed,
+            edges: [
+                Some((0, 1, (
+                    id: Some(0),
+                    display: (
+                        selected: false,
+                        label: Some("links to"),
                         cardinality: Some("N:N"),
                     ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 0",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 6, (
-                id: Some(1),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
+                    props: (
+                        payload: (
+                            label: Some("links to"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 0",
+                    ),
+                    _marker: (),
+                ))),
+                Some((0, 2, (
+                    id: Some(1),
+                    display: (
+                        selected: false,
+                        label: Some("links to"),
+                        cardinality: Some("N:1"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("links to"),
+                            cardinality: Some("N:1"),
+                        ),
+                        order: 1,
+                        selected: false,
+                        label: "edge 1",
+                    ),
+                    _marker: (),
+                ))),
+                Some((2, 1, (
+                    id: Some(2),
+                    display: (
+                        selected: false,
+                        label: Some("links to"),
                         cardinality: Some("N:N"),
                     ),
-                    order: 1,
-                    selected: false,
-                    label: "edge 1",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 2, (
-                id: Some(2),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
+                    props: (
+                        payload: (
+                            label: Some("links to"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 2",
                     ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 2",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 15, (
-                id: Some(3),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
+                    _marker: (),
+                ))),
+                Some((2, 0, (
+                    id: Some(3),
+                    display: (
+                        selected: false,
+                        label: Some("links to"),
+                        cardinality: Some("N:1"),
                     ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 3",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 3, (
-                id: Some(4),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
+                    props: (
+                        payload: (
+                            label: Some("links to"),
+                            cardinality: Some("N:1"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 3",
                     ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 4",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 13, (
-                id: Some(5),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 5",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 8, (
-                id: Some(6),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 6",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 1, (
-                id: Some(7),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 7",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 10, (
-                id: Some(8),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 8",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 9, (
-                id: Some(9),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 9",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 7, (
-                id: Some(10),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 10",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 16, (
-                id: Some(11),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 11",
-                ),
-                _marker: (),
-            ))),
-            Some((0, 6, (
-                id: Some(12),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 2,
-                    selected: false,
-                    label: "edge 12",
-                ),
-                _marker: (),
-            ))),
-            Some((3, 6, (
-                id: Some(13),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("1:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("1:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 13",
-                ),
-                _marker: (),
-            ))),
-            Some((4, 0, (
-                id: Some(14),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 14",
-                ),
-                _marker: (),
-            ))),
-            Some((4, 6, (
-                id: Some(15),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 15",
-                ),
-                _marker: (),
-            ))),
-            Some((4, 5, (
-                id: Some(16),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 16",
-                ),
-                _marker: (),
-            ))),
-            Some((4, 14, (
-                id: Some(17),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 17",
-                ),
-                _marker: (),
-            ))),
-            Some((4, 2, (
-                id: Some(18),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 18",
-                ),
-                _marker: (),
-            ))),
-            Some((4, 15, (
-                id: Some(19),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 19",
-                ),
-                _marker: (),
-            ))),
-            Some((4, 3, (
-                id: Some(20),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 20",
-                ),
-                _marker: (),
-            ))),
-            Some((4, 13, (
-                id: Some(21),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 21",
-                ),
-                _marker: (),
-            ))),
-            Some((4, 16, (
-                id: Some(22),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 22",
-                ),
-                _marker: (),
-            ))),
-            Some((4, 1, (
-                id: Some(23),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 23",
-                ),
-                _marker: (),
-            ))),
-            Some((4, 0, (
-                id: Some(24),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 1,
-                    selected: false,
-                    label: "edge 24",
-                ),
-                _marker: (),
-            ))),
-            Some((8, 14, (
-                id: Some(25),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 25",
-                ),
-                _marker: (),
-            ))),
-            Some((8, 5, (
-                id: Some(26),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 26",
-                ),
-                _marker: (),
-            ))),
-            Some((8, 6, (
-                id: Some(27),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 27",
-                ),
-                _marker: (),
-            ))),
-            Some((8, 16, (
-                id: Some(28),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 28",
-                ),
-                _marker: (),
-            ))),
-            Some((11, 8, (
-                id: Some(29),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 29",
-                ),
-                _marker: (),
-            ))),
-            Some((11, 9, (
-                id: Some(30),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 30",
-                ),
-                _marker: (),
-            ))),
-            Some((11, 10, (
-                id: Some(31),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 31",
-                ),
-                _marker: (),
-            ))),
-            Some((11, 7, (
-                id: Some(32),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 32",
-                ),
-                _marker: (),
-            ))),
-            Some((13, 6, (
-                id: Some(33),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("1:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("1:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 33",
-                ),
-                _marker: (),
-            ))),
-            Some((15, 6, (
-                id: Some(34),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("1:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("1:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 34",
-                ),
-                _marker: (),
-            ))),
-            Some((16, 6, (
-                id: Some(35),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 35",
-                ),
-                _marker: (),
-            ))),
-            Some((16, 14, (
-                id: Some(36),
-                display: (
-                    selected: false,
-                    label: Some("imports"),
-                    cardinality: Some("N:N"),
-                ),
-                props: (
-                    payload: (
-                        label: Some("imports"),
-                        cardinality: Some("N:N"),
-                    ),
-                    order: 0,
-                    selected: false,
-                    label: "edge 36",
-                ),
-                _marker: (),
-            ))),
-        ],
-    ),
-    selected_nodes: [],
-    selected_edges: [],
-    dragged_node: None,
-    hovered_node: None,
-    bounds: (
-        min: (
-            x: -1504.6016,
-            y: -2595.187,
+                    _marker: (),
+                ))),
+            ],
         ),
-        max: (
-            x: 573.95953,
-            y: -730.84424,
+        selected_nodes: [],
+        selected_edges: [],
+        dragged_node: None,
+        hovered_node: None,
+        bounds: (
+            min: (
+                x: -104.06925,
+                y: -155.3974,
+            ),
+            max: (
+                x: 477.24707,
+                y: 324.7189,
+            ),
+        ),
+    ),
+    code_graph: (
+        g: (
+            nodes: [
+                (
+                    id: Some(0),
+                    props: (
+                        payload: (
+                            label: "app.rs",
+                            content: "# File: app.rs\n\n## Structure\n\n- **Struct**: `LogMarkApp`\n- **Impl**: `LogMarkApp`\n- **Fn**: `new`\n- **Fn**: `poll_wasm_import`\n- **Fn**: `web_export_ron`\n- **Fn**: `start_wasm_file_picker`\n- **Fn**: `push_toast`\n- **Fn**: `prune_toasts`\n- **Fn**: `push_undo`\n- **Fn**: `undo`\n- **Fn**: `redo`\n- **Fn**: `apply_hierarchical_layout`\n- **Fn**: `run_code_analysis`\n- **Impl**: `LogMarkApp`\n- **Fn**: `update`\n",
+                        ),
+                        label: "node 0",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -270.04883,
+                            y: -3846.3452,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: -270.04883,
+                            y: -3846.3452,
+                        ),
+                        label: "app.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "app.rs",
+                            content: "# File: app.rs\n\n## Structure\n\n- **Struct**: `LogMarkApp`\n- **Impl**: `LogMarkApp`\n- **Fn**: `new`\n- **Fn**: `poll_wasm_import`\n- **Fn**: `web_export_ron`\n- **Fn**: `start_wasm_file_picker`\n- **Fn**: `push_toast`\n- **Fn**: `prune_toasts`\n- **Fn**: `push_undo`\n- **Fn**: `undo`\n- **Fn**: `redo`\n- **Fn**: `apply_hierarchical_layout`\n- **Fn**: `run_code_analysis`\n- **Impl**: `LogMarkApp`\n- **Fn**: `update`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(1),
+                    props: (
+                        payload: (
+                            label: "analyzer.rs",
+                            content: "# File: analyzer.rs\n\n## Structure\n\n- **Struct**: `FileNode`\n- **Struct**: `ProjectAnalyzer`\n- **Impl**: `ProjectAnalyzer`\n- **Fn**: `new`\n- **Fn**: `analyze_path`\n- **Fn**: `analyze_rust_file`\n- **Fn**: `analyze_python_file`\n",
+                        ),
+                        label: "node 1",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -7030.104,
+                            y: -6245.661,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: -7030.104,
+                            y: -6245.661,
+                        ),
+                        label: "analyzer.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "analyzer.rs",
+                            content: "# File: analyzer.rs\n\n## Structure\n\n- **Struct**: `FileNode`\n- **Struct**: `ProjectAnalyzer`\n- **Impl**: `ProjectAnalyzer`\n- **Fn**: `new`\n- **Fn**: `analyze_path`\n- **Fn**: `analyze_rust_file`\n- **Fn**: `analyze_python_file`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(2),
+                    props: (
+                        payload: (
+                            label: "types.rs",
+                            content: "# File: types.rs\n\n## Structure\n\n- **Enum**: `AppLayout`\n- **Enum**: `QuickTemplate`\n- **Enum**: `AppTab`\n- **Enum**: `VisualizationMode`\n- **Impl**: `VisualizationMode`\n- **Fn**: `label`\n- **Enum**: `SidebarTab`\n- **Enum**: `EditorMode`\n",
+                        ),
+                        label: "node 2",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -2850.3425,
+                            y: -9147.985,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: -2850.3425,
+                            y: -9147.985,
+                        ),
+                        label: "types.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "types.rs",
+                            content: "# File: types.rs\n\n## Structure\n\n- **Enum**: `AppLayout`\n- **Enum**: `QuickTemplate`\n- **Enum**: `AppTab`\n- **Enum**: `VisualizationMode`\n- **Impl**: `VisualizationMode`\n- **Fn**: `label`\n- **Enum**: `SidebarTab`\n- **Enum**: `EditorMode`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(3),
+                    props: (
+                        payload: (
+                            label: "persistence.rs",
+                            content: "# File: persistence.rs\n\n## Structure\n\n- **Struct**: `ProjectState`\n- **Fn**: `autosave_path`\n- **Fn**: `default_graph_path`\n- **Fn**: `default_graph`\n- **Fn**: `hardcoded_default_graph`\n- **Fn**: `load_autosave`\n- **Fn**: `commit_changes`\n- **Fn**: `web_storage`\n",
+                        ),
+                        label: "node 3",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -3879.9604,
+                            y: -6353.3926,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: -3879.9604,
+                            y: -6353.3926,
+                        ),
+                        label: "persistence.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "persistence.rs",
+                            content: "# File: persistence.rs\n\n## Structure\n\n- **Struct**: `ProjectState`\n- **Fn**: `autosave_path`\n- **Fn**: `default_graph_path`\n- **Fn**: `default_graph`\n- **Fn**: `hardcoded_default_graph`\n- **Fn**: `load_autosave`\n- **Fn**: `commit_changes`\n- **Fn**: `web_storage`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(4),
+                    props: (
+                        payload: (
+                            label: "check_wrap.rs",
+                            content: "# File: check_wrap.rs\n\n## Structure\n\n- **Fn**: `main`\n",
+                        ),
+                        label: "node 4",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: 8501.8,
+                            y: 13230.709,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: 8501.8,
+                            y: 13230.709,
+                        ),
+                        label: "check_wrap.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "check_wrap.rs",
+                            content: "# File: check_wrap.rs\n\n## Structure\n\n- **Fn**: `main`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(5),
+                    props: (
+                        payload: (
+                            label: "lib.rs",
+                            content: "# File: lib.rs\n\n## Structure\n\n- **Struct**: `GraphSettings`\n- **Struct**: `WebHandle`\n- **Impl**: `WebHandle`\n- **Fn**: `new`\n- **Fn**: `start`\n- **Fn**: `destroy`\n- **Fn**: `has_panicked`\n- **Fn**: `panic_message`\n- **Fn**: `panic_callstack`\n",
+                        ),
+                        label: "node 5",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -3961.277,
+                            y: -3204.0828,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: -3961.277,
+                            y: -3204.0828,
+                        ),
+                        label: "lib.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "lib.rs",
+                            content: "# File: lib.rs\n\n## Structure\n\n- **Struct**: `GraphSettings`\n- **Struct**: `WebHandle`\n- **Impl**: `WebHandle`\n- **Fn**: `new`\n- **Fn**: `start`\n- **Fn**: `destroy`\n- **Fn**: `has_panicked`\n- **Fn**: `panic_message`\n- **Fn**: `panic_callstack`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(6),
+                    props: (
+                        payload: (
+                            label: "syntax.rs",
+                            content: "# File: syntax.rs\n\n## Structure\n\n- **Fn**: `markdown`\n",
+                        ),
+                        label: "node 6",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -7089.538,
+                            y: 2374.3423,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: -7089.538,
+                            y: 2374.3423,
+                        ),
+                        label: "syntax.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "syntax.rs",
+                            content: "# File: syntax.rs\n\n## Structure\n\n- **Fn**: `markdown`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(7),
+                    props: (
+                        payload: (
+                            label: "graph.rs",
+                            content: "# File: graph.rs\n\n## Structure\n\n- **Struct**: `LogNodeData`\n- **Struct**: `LogEdgeData`\n- **Struct**: `LogNode`\n- **Impl**: `LogNode`\n- **Fn**: `payload`\n- **Fn**: `payload_mut`\n- **Impl**: `LogNode`\n- **Fn**: `from`\n- **Impl**: `LogNode`\n- **Fn**: `is_inside`\n- **Fn**: `closest_boundary_point`\n- **Fn**: `shapes`\n- **Fn**: `update`\n- **Struct**: `LogEdge`\n- **Impl**: `LogEdge`\n- **Fn**: `from`\n- **Impl**: `LogEdge`\n- **Fn**: `is_inside`\n- **Fn**: `shapes`\n- **Fn**: `update`\n",
+                        ),
+                        label: "node 7",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -1532.5469,
+                            y: -2476.933,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: -1532.5469,
+                            y: -2476.933,
+                        ),
+                        label: "graph.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "graph.rs",
+                            content: "# File: graph.rs\n\n## Structure\n\n- **Struct**: `LogNodeData`\n- **Struct**: `LogEdgeData`\n- **Struct**: `LogNode`\n- **Impl**: `LogNode`\n- **Fn**: `payload`\n- **Fn**: `payload_mut`\n- **Impl**: `LogNode`\n- **Fn**: `from`\n- **Impl**: `LogNode`\n- **Fn**: `is_inside`\n- **Fn**: `closest_boundary_point`\n- **Fn**: `shapes`\n- **Fn**: `update`\n- **Struct**: `LogEdge`\n- **Impl**: `LogEdge`\n- **Fn**: `from`\n- **Impl**: `LogEdge`\n- **Fn**: `is_inside`\n- **Fn**: `shapes`\n- **Fn**: `update`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(8),
+                    props: (
+                        payload: (
+                            label: "settings_window.rs",
+                            content: "# File: settings_window.rs\n\n## Structure\n\n- **Struct**: `SettingsWindow`\n- **Impl**: `SettingsWindow`\n- **Fn**: `default`\n- **Impl**: `SettingsWindow`\n- **Fn**: `show`\n",
+                        ),
+                        label: "node 8",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: 5574.2334,
+                            y: -6147.656,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: 5574.2334,
+                            y: -6147.656,
+                        ),
+                        label: "settings_window.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "settings_window.rs",
+                            content: "# File: settings_window.rs\n\n## Structure\n\n- **Struct**: `SettingsWindow`\n- **Impl**: `SettingsWindow`\n- **Fn**: `default`\n- **Impl**: `SettingsWindow`\n- **Fn**: `show`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(9),
+                    props: (
+                        payload: (
+                            label: "editor.rs",
+                            content: "# File: editor.rs\n\n## Structure\n\n- **Struct**: `EditorState`\n- **Impl**: `EditorState`\n- **Fn**: `new`\n- **Fn**: `show`\n- **Fn**: `insert_slash_template`\n\n\n\n~~~~\n\n\nfaltan mas meto\n\n",
+                        ),
+                        label: "node 9",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: 974.16565,
+                            y: 1262.9456,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: 974.16565,
+                            y: 1262.9456,
+                        ),
+                        label: "editor.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "editor.rs",
+                            content: "# File: editor.rs\n\n## Structure\n\n- **Struct**: `EditorState`\n- **Impl**: `EditorState`\n- **Fn**: `new`\n- **Fn**: `show`\n- **Fn**: `insert_slash_template`\n\n\n\n~~~~\n\n\nfaltan mas meto\n\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(10),
+                    props: (
+                        payload: (
+                            label: "help.rs",
+                            content: "# File: help.rs\n\n## Structure\n\n- **Fn**: `show_help_window`\n",
+                        ),
+                        label: "node 10",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: 7006.381,
+                            y: -4177.34,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: 7006.381,
+                            y: -4177.34,
+                        ),
+                        label: "help.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "help.rs",
+                            content: "# File: help.rs\n\n## Structure\n\n- **Fn**: `show_help_window`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(11),
+                    props: (
+                        payload: (
+                            label: "settings.rs",
+                            content: "# File: settings.rs\n\n## Structure\n\n- **Struct**: `Settings3D`\n- **Impl**: `Settings3D`\n- **Fn**: `default`\n- **Fn**: `show`\n- **Fn**: `update`\n",
+                        ),
+                        label: "node 11",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: 4891.2744,
+                            y: 773.6107,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: 4891.2744,
+                            y: 773.6107,
+                        ),
+                        label: "settings.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "settings.rs",
+                            content: "# File: settings.rs\n\n## Structure\n\n- **Struct**: `Settings3D`\n- **Impl**: `Settings3D`\n- **Fn**: `default`\n- **Fn**: `show`\n- **Fn**: `update`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(12),
+                    props: (
+                        payload: (
+                            label: "mod.rs",
+                            content: "# File: mod.rs\n\n## Structure\n\n",
+                        ),
+                        label: "node 12",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: 6446.938,
+                            y: -1253.2966,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: 6446.938,
+                            y: -1253.2966,
+                        ),
+                        label: "mod.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "mod.rs",
+                            content: "# File: mod.rs\n\n## Structure\n\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(13),
+                    props: (
+                        payload: (
+                            label: "main.rs",
+                            content: "# File: main.rs\n\n## Structure\n\n- **Fn**: `main`\n- **Fn**: `main`\n",
+                        ),
+                        label: "node 13",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -1599.8911,
+                            y: 16076.863,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: -1599.8911,
+                            y: 16076.863,
+                        ),
+                        label: "main.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "main.rs",
+                            content: "# File: main.rs\n\n## Structure\n\n- **Fn**: `main`\n- **Fn**: `main`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(14),
+                    props: (
+                        payload: (
+                            label: "lua.rs",
+                            content: "# File: lua.rs\n\n## Structure\n\n- **Struct**: `LuaEngine`\n- **Impl**: `LuaEngine`\n- **Fn**: `new`\n- **Fn**: `run_script`\n",
+                        ),
+                        label: "node 14",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -410.13443,
+                            y: -6764.3784,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: -410.13443,
+                            y: -6764.3784,
+                        ),
+                        label: "lua.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "lua.rs",
+                            content: "# File: lua.rs\n\n## Structure\n\n- **Struct**: `LuaEngine`\n- **Impl**: `LuaEngine`\n- **Fn**: `new`\n- **Fn**: `run_script`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(15),
+                    props: (
+                        payload: (
+                            label: "parser.rs",
+                            content: "# File: parser.rs\n\n## Structure\n\n- **Struct**: `MarkdownParser`\n- **Impl**: `MarkdownParser`\n- **Fn**: `new`\n- **Fn**: `parse`\n- **Fn**: `is_in_code_block`\n- **Fn**: `get_safe_ranges`\n- **Fn**: `collect_code_ranges`\n",
+                        ),
+                        label: "node 15",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -3867.374,
+                            y: 3328.9055,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: -3867.374,
+                            y: 3328.9055,
+                        ),
+                        label: "parser.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "parser.rs",
+                            content: "# File: parser.rs\n\n## Structure\n\n- **Struct**: `MarkdownParser`\n- **Impl**: `MarkdownParser`\n- **Fn**: `new`\n- **Fn**: `parse`\n- **Fn**: `is_in_code_block`\n- **Fn**: `get_safe_ranges`\n- **Fn**: `collect_code_ranges`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(16),
+                    props: (
+                        payload: (
+                            label: "utils.rs",
+                            content: "# File: utils.rs\n\n## Structure\n\n- **Fn**: `project_3d_to_2d`\n- **Fn**: `calculate_edge_cardinality`\n- **Fn**: `process_wikilinks_for_preview`\n",
+                        ),
+                        label: "node 16",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -5702.6714,
+                            y: -1776.7144,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: -5702.6714,
+                            y: -1776.7144,
+                        ),
+                        label: "utils.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "utils.rs",
+                            content: "# File: utils.rs\n\n## Structure\n\n- **Fn**: `project_3d_to_2d`\n- **Fn**: `calculate_edge_cardinality`\n- **Fn**: `process_wikilinks_for_preview`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+                (
+                    id: Some(17),
+                    props: (
+                        payload: (
+                            label: "actions.rs",
+                            content: "# File: actions.rs\n\n## Structure\n\n- **Fn**: `handle_wikilinks`\n- **Fn**: `cleanup_orphans`\n",
+                        ),
+                        label: "node 17",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        color: None,
+                        location: (
+                            x: -3326.7734,
+                            y: 115.94287,
+                        ),
+                    ),
+                    display: (
+                        pos: (
+                            x: -3326.7734,
+                            y: 115.94287,
+                        ),
+                        label: "actions.rs",
+                        selected: false,
+                        dragged: false,
+                        hovered: false,
+                        radius: 30.0,
+                        payload: (
+                            label: "actions.rs",
+                            content: "# File: actions.rs\n\n## Structure\n\n- **Fn**: `handle_wikilinks`\n- **Fn**: `cleanup_orphans`\n",
+                        ),
+                    ),
+                    _marker: (),
+                ),
+            ],
+            node_holes: [],
+            edge_property: directed,
+            edges: [
+                Some((0, 7, (
+                    id: Some(0),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 0",
+                    ),
+                    _marker: (),
+                ))),
+                Some((0, 7, (
+                    id: Some(1),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 1,
+                        selected: false,
+                        label: "edge 1",
+                    ),
+                    _marker: (),
+                ))),
+                Some((0, 2, (
+                    id: Some(2),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 2",
+                    ),
+                    _marker: (),
+                ))),
+                Some((0, 16, (
+                    id: Some(3),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 3",
+                    ),
+                    _marker: (),
+                ))),
+                Some((0, 3, (
+                    id: Some(4),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 4",
+                    ),
+                    _marker: (),
+                ))),
+                Some((0, 14, (
+                    id: Some(5),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 5",
+                    ),
+                    _marker: (),
+                ))),
+                Some((0, 9, (
+                    id: Some(6),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 6",
+                    ),
+                    _marker: (),
+                ))),
+                Some((0, 1, (
+                    id: Some(7),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 7",
+                    ),
+                    _marker: (),
+                ))),
+                Some((0, 11, (
+                    id: Some(8),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 8",
+                    ),
+                    _marker: (),
+                ))),
+                Some((0, 10, (
+                    id: Some(9),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 9",
+                    ),
+                    _marker: (),
+                ))),
+                Some((0, 8, (
+                    id: Some(10),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 10",
+                    ),
+                    _marker: (),
+                ))),
+                Some((0, 17, (
+                    id: Some(11),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 11",
+                    ),
+                    _marker: (),
+                ))),
+                Some((0, 7, (
+                    id: Some(12),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 2,
+                        selected: false,
+                        label: "edge 12",
+                    ),
+                    _marker: (),
+                ))),
+                Some((3, 7, (
+                    id: Some(13),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("1:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("1:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 13",
+                    ),
+                    _marker: (),
+                ))),
+                Some((5, 0, (
+                    id: Some(14),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 14",
+                    ),
+                    _marker: (),
+                ))),
+                Some((5, 7, (
+                    id: Some(15),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 15",
+                    ),
+                    _marker: (),
+                ))),
+                Some((5, 6, (
+                    id: Some(16),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:1"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:1"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 16",
+                    ),
+                    _marker: (),
+                ))),
+                Some((5, 15, (
+                    id: Some(17),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 17",
+                    ),
+                    _marker: (),
+                ))),
+                Some((5, 2, (
+                    id: Some(18),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 18",
+                    ),
+                    _marker: (),
+                ))),
+                Some((5, 16, (
+                    id: Some(19),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 19",
+                    ),
+                    _marker: (),
+                ))),
+                Some((5, 3, (
+                    id: Some(20),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 20",
+                    ),
+                    _marker: (),
+                ))),
+                Some((5, 14, (
+                    id: Some(21),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 21",
+                    ),
+                    _marker: (),
+                ))),
+                Some((5, 17, (
+                    id: Some(22),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 22",
+                    ),
+                    _marker: (),
+                ))),
+                Some((5, 1, (
+                    id: Some(23),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 23",
+                    ),
+                    _marker: (),
+                ))),
+                Some((5, 0, (
+                    id: Some(24),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 1,
+                        selected: false,
+                        label: "edge 24",
+                    ),
+                    _marker: (),
+                ))),
+                None,
+                None,
+                None,
+                None,
+                Some((12, 9, (
+                    id: Some(29),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 29",
+                    ),
+                    _marker: (),
+                ))),
+                Some((12, 10, (
+                    id: Some(30),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 30",
+                    ),
+                    _marker: (),
+                ))),
+                Some((12, 11, (
+                    id: Some(31),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 31",
+                    ),
+                    _marker: (),
+                ))),
+                Some((12, 8, (
+                    id: Some(32),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 32",
+                    ),
+                    _marker: (),
+                ))),
+                Some((14, 7, (
+                    id: Some(33),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("1:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("1:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 33",
+                    ),
+                    _marker: (),
+                ))),
+                Some((16, 7, (
+                    id: Some(34),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("1:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("1:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 34",
+                    ),
+                    _marker: (),
+                ))),
+                Some((17, 7, (
+                    id: Some(35),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 35",
+                    ),
+                    _marker: (),
+                ))),
+                Some((17, 15, (
+                    id: Some(36),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 36",
+                    ),
+                    _marker: (),
+                ))),
+                Some((17, 16, (
+                    id: Some(37),
+                    display: (
+                        selected: false,
+                        label: Some("imports"),
+                        cardinality: Some("N:N"),
+                    ),
+                    props: (
+                        payload: (
+                            label: Some("imports"),
+                            cardinality: Some("N:N"),
+                        ),
+                        order: 0,
+                        selected: false,
+                        label: "edge 37",
+                    ),
+                    _marker: (),
+                ))),
+            ],
+        ),
+        selected_nodes: [],
+        selected_edges: [],
+        dragged_node: None,
+        hovered_node: None,
+        bounds: (
+            min: (
+                x: -7119.538,
+                y: -9177.985,
+            ),
+            max: (
+                x: 8531.8,
+                y: 16106.863,
+            ),
         ),
     ),
 )
