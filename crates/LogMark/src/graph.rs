@@ -11,7 +11,6 @@ pub struct LogNodeData {
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default)]
 pub struct LogEdgeData {
     pub label: Option<String>,
-    pub cardinality: Option<String>,
 }
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -119,7 +118,6 @@ impl DisplayNode<LogNodeData, LogEdgeData, Directed, u32> for LogNode {
 pub struct LogEdge {
     pub selected: bool,
     pub label: Option<String>,
-    pub cardinality: Option<String>,
 }
 
 impl From<EdgeProps<LogEdgeData>> for LogEdge {
@@ -127,7 +125,6 @@ impl From<EdgeProps<LogEdgeData>> for LogEdge {
         Self {
             selected: edge_props.selected,
             label: edge_props.payload.label.clone(),
-            cardinality: edge_props.payload.cardinality.clone(),
         }
     }
 }
@@ -197,12 +194,10 @@ impl DisplayEdge<LogNodeData, LogEdgeData, Directed, u32, LogNode> for LogEdge {
         ));
 
         // Read settings
-        let (base_font_size_label, base_font_size_card) = {
-            if let Ok(settings) = crate::GRAPH_SETTINGS.read() {
-                (settings.font_size_edge_label, settings.font_size_cardinality)
-            } else {
-                (14.0, 12.0)
-            }
+        let base_font_size_label = if let Ok(settings) = crate::GRAPH_SETTINGS.read() {
+            settings.font_size_edge_label
+        } else {
+            14.0
         };
 
         // Label
@@ -265,41 +260,6 @@ impl DisplayEdge<LogNodeData, LogEdgeData, Directed, u32, LogNode> for LogEdge {
             shapes.push(text_shape.into());
         }
 
-        // Cardinality
-        if let Some(card) = &self.cardinality {
-            let mid = screen_start + (screen_end - screen_start) * 0.5;
-            let font_size = ctx.meta.canvas_to_screen_size(base_font_size_card).max(10.0).min(30.0);
-            
-            let angle = screen_dir.y.atan2(screen_dir.x);
-            let (angle, offset_dir) = if angle.abs() > std::f32::consts::FRAC_PI_2 {
-                (angle + std::f32::consts::PI, -screen_perp)
-            } else {
-                (angle, screen_perp)
-            };
-
-            // Offset "down" (opposite to label)
-            let text_pos = mid + offset_dir * (font_size + 5.0);
-            
-            let galley = ctx.ctx.fonts_mut(|f| {
-                f.layout_no_wrap(
-                    card.clone(),
-                    FontId::new(font_size, FontFamily::Proportional),
-                    Color32::from_rgb(150, 200, 255),
-                )
-            });
-            
-            let mut text_shape = egui::epaint::TextShape::new(text_pos, galley, Color32::from_rgb(150, 200, 255));
-            text_shape.angle = angle;
-            
-            let half_size = text_shape.galley.size() / 2.0;
-            let rotated_offset = Vec2::new(
-                half_size.x * angle.cos() - half_size.y * angle.sin(),
-                half_size.x * angle.sin() + half_size.y * angle.cos()
-            );
-            text_shape.pos = text_pos - rotated_offset;
-
-            shapes.push(text_shape.into());
-        }
 
         shapes
     }
@@ -307,6 +267,6 @@ impl DisplayEdge<LogNodeData, LogEdgeData, Directed, u32, LogNode> for LogEdge {
     fn update(&mut self, state: &EdgeProps<LogEdgeData>) {
         self.selected = state.selected;
         self.label = state.payload.label.clone();
-        self.cardinality = state.payload.cardinality.clone();
+        // cardinality removed in logmark-lite
     }
 }

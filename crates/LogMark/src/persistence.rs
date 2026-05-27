@@ -97,15 +97,15 @@ pub fn hardcoded_default_graph() -> LogGraph {
         content: "# Hierarchy\n\nHierarchical layout provides a node tree view that can fill the screen.".to_string(),
     });
 
-    g.add_edge(overview, auto_commit, LogEdgeData { label: Some("explains".to_string()), cardinality: None });
-    g.add_edge(overview, layouts, LogEdgeData { label: Some("shows".to_string()), cardinality: None });
-    g.add_edge(overview, relationships, LogEdgeData { label: Some("details".to_string()), cardinality: None });
-    g.add_edge(overview, slash, LogEdgeData { label: Some("includes".to_string()), cardinality: None });
-    g.add_edge(overview, lua, LogEdgeData { label: Some("supports".to_string()), cardinality: None });
-    g.add_edge(overview, hierarchy, LogEdgeData { label: Some("adds".to_string()), cardinality: None });
-    g.add_edge(slash, relationships, LogEdgeData { label: Some("creates".to_string()), cardinality: None });
-    g.add_edge(layouts, hierarchy, LogEdgeData { label: Some("offers".to_string()), cardinality: None });
-    g.add_edge(lua, relationships, LogEdgeData { label: Some("annotates".to_string()), cardinality: None });
+    g.add_edge(overview, auto_commit, LogEdgeData { label: Some("explains".to_string()) });
+    g.add_edge(overview, layouts, LogEdgeData { label: Some("shows".to_string()) });
+    g.add_edge(overview, relationships, LogEdgeData { label: Some("details".to_string()) });
+    g.add_edge(overview, slash, LogEdgeData { label: Some("includes".to_string()) });
+    g.add_edge(overview, lua, LogEdgeData { label: Some("supports".to_string()) });
+    g.add_edge(overview, hierarchy, LogEdgeData { label: Some("adds".to_string()) });
+    g.add_edge(slash, relationships, LogEdgeData { label: Some("creates".to_string()) });
+    g.add_edge(layouts, hierarchy, LogEdgeData { label: Some("offers".to_string()) });
+    g.add_edge(lua, relationships, LogEdgeData { label: Some("annotates".to_string()) });
 
     let mut graph = Graph::from(&g);
 

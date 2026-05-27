@@ -120,7 +120,7 @@ impl LuaEngine {
                         undo_stack.push(graph.clone());
                         redo_stack.clear();
 
-                        graph.add_edge(from, to, LogEdgeData { label: edge_label, cardinality: None });
+                        graph.add_edge(from, to, LogEdgeData { label: edge_label });
                         self.output.push_str(&format!("Added edge: {} -> {}\n", from_label, to_label));
                         *change_count += 1;
                     } else {

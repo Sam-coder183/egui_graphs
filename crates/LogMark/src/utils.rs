@@ -41,24 +41,7 @@ pub fn project_3d_to_2d(
     pivot + projected_local.to_vec2()
 }
 
-/// Calculate the cardinality of an edge based on the in/out degree of connected nodes
-/// Returns a string like "1:1", "1:N", or "N:N"
-pub fn calculate_edge_cardinality(
-    graph: &Graph<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge>,
-    source: petgraph::stable_graph::NodeIndex,
-    target: petgraph::stable_graph::NodeIndex
-) -> String {
-    // Count outgoing edges from source to determine the "one" or "many" on source side
-    let source_out_degree = graph.g().edges_directed(source, Direction::Outgoing).count();
-    
-    // Count incoming edges to target to determine the "one" or "many" on target side
-    let target_in_degree = graph.g().edges_directed(target, Direction::Incoming).count();
-    
-    let source_card = if source_out_degree <= 1 { "1" } else { "N" };
-    let target_card = if target_in_degree <= 1 { "1" } else { "N" };
-    
-    format!("{}:{}", source_card, target_card)
-}
+// Cardinality analysis removed in logmark-lite.
 
 pub fn process_wikilinks_for_preview(content: &str) -> String {
     let re = regex::Regex::new(r"\[\[(.*?)(?:\|(.*?))?\]\]").unwrap();

@@ -2,7 +2,6 @@ use egui::{Context, Window, Slider};
 
 pub struct SettingsWindow {
     pub open: bool,
-    pub font_size_cardinality: f32,
     pub font_size_edge_label: f32,
     pub ui_scale: f32,
 }
@@ -11,7 +10,6 @@ impl Default for SettingsWindow {
     fn default() -> Self {
         Self {
             open: false,
-            font_size_cardinality: 12.0,
             font_size_edge_label: 14.0,
             ui_scale: 1.0,
         }
@@ -33,7 +31,6 @@ impl SettingsWindow {
                     ui.separator();
                     ui.heading("Graph Text");
                     ui.add(Slider::new(&mut self.font_size_edge_label, 8.0..=30.0).text("Edge Label Size"));
-                    ui.add(Slider::new(&mut self.font_size_cardinality, 8.0..=30.0).text("Cardinality Size"));
                 });
         }
     }

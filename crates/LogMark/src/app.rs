@@ -36,7 +36,7 @@ use ron::ser::{to_string_pretty, PrettyConfig};
 
 use crate::graph::{LogNode, LogEdge, LogNodeData, LogEdgeData};
 use crate::types::{AppLayout, QuickTemplate, AppTab, VisualizationMode, SidebarTab, EditorMode};
-use crate::utils::{calculate_edge_cardinality, process_wikilinks_for_preview};
+use crate::utils::process_wikilinks_for_preview;
 use crate::persistence::{load_autosave, commit_changes, default_graph};
 use crate::lua::LuaEngine;
 use crate::ui::editor::EditorState;
@@ -112,8 +112,6 @@ pub struct LogMarkApp {
     current_tab: AppTab,
     visualization_mode: VisualizationMode,
     
-    // Entity Relationship Cardinality
-    show_cardinality: bool,
 
     // Selection State
     selected_node: Option<petgraph::stable_graph::NodeIndex>,
@@ -176,7 +174,6 @@ impl LogMarkApp {
             sidebar_tab: SidebarTab::Edit,
             current_tab: AppTab::Graph,
             visualization_mode: VisualizationMode::TwoD,
-            show_cardinality: false,
             selected_node: None,
         }
     }
@@ -459,7 +456,6 @@ impl LogMarkApp {
                                  if source_idx != target_idx {
                                      g.add_edge(*source_idx, *target_idx, LogEdgeData {
                                          label: Some("imports".to_string()),
-                                         cardinality: None,
                                      });
                                  }
                              }
@@ -525,32 +521,6 @@ impl App for LogMarkApp {
             self.redo();
         }
 
-        // Delete node shortcut
-        if ctx.input(|i| i.key_pressed(Key::Delete)) && !ctx.wants_keyboard_input() {
-             if let Some(idx) = self.selected_node {
-                 self.push_undo();
-                 self.graph.remove_node(idx);
-                 self.selected_node = None;
-                 self.change_count += 1;
-                 self.push_toast("Deleted node");
-             }
-        }
-
-        self.prune_toasts();
-
-        #[cfg(target_arch = "wasm32")]
-        self.poll_wasm_import();
-
-        // Help Window
-        show_help_window(ctx, &mut self.show_help);
-
-        // Settings Window
-        self.settings_window.show(ctx);
-        if let Ok(mut settings) = GRAPH_SETTINGS.write() {
-            settings.font_size_cardinality = self.settings_window.font_size_cardinality;
-            settings.font_size_edge_label = self.settings_window.font_size_edge_label;
-        }
-
         // Top Panel
         TopBottomPanel::top("top_menu").show(ctx, |ui| {
             ui.horizontal(|ui| {
@@ -566,12 +536,15 @@ impl App for LogMarkApp {
                     .selected_text(self.visualization_mode.label())
                     .show_ui(ui, |ui| {
                         ui.selectable_value(&mut self.visualization_mode, VisualizationMode::TwoD, "Documentation View 📝");
+                        ui.selectable_value(&mut self.visualization_mode, VisualizationMode::Journal, "Journal View 📔");
                         ui.selectable_value(&mut self.visualization_mode, VisualizationMode::CodeAnalysis, "Code Analysis");
                     });
                 
                 if prev_mode != self.visualization_mode {
-                    // Swap graphs
-                    std::mem::swap(&mut self.graph, &mut self.secondary_graph);
+                    if prev_mode.is_doc_view() != self.visualization_mode.is_doc_view() {
+                        // Swap graphs only when switching between doc-like and code analysis modes
+                        std::mem::swap(&mut self.graph, &mut self.secondary_graph);
+                    }
                     // Clear selection and undo stack to avoid confusion
                     self.selected_node = None;
                     self.graph.set_selected_nodes(vec![]);
@@ -630,7 +603,7 @@ impl App for LogMarkApp {
                             if let Ok(content) = fs::read_to_string(&path) {
                                 if let Ok(state) = from_str::<crate::persistence::ProjectState>(&content) {
                                     self.push_undo();
-                                    if self.visualization_mode == VisualizationMode::TwoD {
+                                    if self.visualization_mode.is_doc_view() {
                                         self.graph = state.doc_graph;
                                         self.secondary_graph = state.code_graph;
                                     } else {
@@ -660,7 +633,7 @@ impl App for LogMarkApp {
                     #[cfg(not(target_arch = "wasm32"))]
                     {
                         if let Some(path) = FileDialog::new().add_filter("RON", &["ron"]).save_file() {
-                            let state = if self.visualization_mode == VisualizationMode::TwoD {
+                            let state = if self.visualization_mode.is_doc_view() {
                                 crate::persistence::ProjectState {
                                     doc_graph: self.graph.clone(),
                                     code_graph: self.secondary_graph.clone(),
@@ -714,45 +687,6 @@ impl App for LogMarkApp {
             });
         });
 
-        // WASM import modal for pasted RON
-        #[cfg(target_arch = "wasm32")]
-        if self.wasm_import_open {
-            let mut open = true;
-            Window::new("Import RON")
-                .collapsible(false)
-                .open(&mut open)
-                .show(ctx, |ui| {
-                    ui.label("Paste RON graph content:");
-                    ui.add_sized(ui.available_size() - egui::Vec2::new(0.0, 60.0), TextEdit::multiline(&mut self.wasm_import_buffer));
-                    ui.horizontal(|ui| {
-                        if ui.button("Import").clicked() {
-                            if let Ok(state) = from_str::<crate::persistence::ProjectState>(&self.wasm_import_buffer) {
-                                if self.visualization_mode == VisualizationMode::TwoD {
-                                    self.graph = state.doc_graph;
-                                    self.secondary_graph = state.code_graph;
-                                } else {
-                                    self.graph = state.code_graph;
-                                    self.secondary_graph = state.doc_graph;
-                                }
-                                self.push_toast("Imported project");
-                                self.wasm_import_open = false;
-                            } else if let Ok(graph) = from_str::<crate::persistence::LogGraph>(&self.wasm_import_buffer) {
-                                self.graph = graph;
-                                self.secondary_graph = Graph::from(&StableGraph::new());
-                                self.push_toast("Imported legacy graph");
-                                self.wasm_import_open = false;
-                            } else {
-                                self.push_toast("Invalid RON");
-                            }
-                        }
-                    });
-                });
-
-            if !open {
-                self.wasm_import_open = false;
-            }
-        }
-
         // 3D Visualization Settings Window
         self.settings_3d.show(ctx);
         self.settings_3d.update(ctx);
@@ -793,73 +727,54 @@ impl App for LogMarkApp {
                 .resizable(true)
                 .default_width(220.0)
                 .show(ctx, |ui| {
-                    ui.heading("Options");
+                    let is_note_mode = self.visualization_mode.is_note_mode();
+                    ui.heading(if is_note_mode { "Journal Notes" } else { "Options" });
                     if ui.button("Zen Mode (Esc)").clicked() {
                         self.zen_mode = true;
                         self.push_toast("Zen Mode (Esc to exit)");
                     }
-                    if ui.button("🧹 Cleanup Orphans").clicked() {
-                        self.push_undo();
-                        let count = cleanup_orphans(&mut self.graph);
-                        self.push_toast(format!("Removed {} orphans", count));
-                        self.change_count += 1;
-                    }
-                    if ui.button("⚙ Settings").clicked() {
-                        self.settings_window.open = true;
-                    }
-                    ui.separator();
-                    ui.label("Layout:");
-                ui.radio_value(&mut self.layout, AppLayout::Random, "Random")
-                    .on_hover_text("Scatter nodes unpredictably");
-                ui.radio_value(&mut self.layout, AppLayout::Force, "Force")
-                    .on_hover_text("Physics-based layout");
-                
-                if ui.radio_value(&mut self.layout, AppLayout::Hierarchical, "Hierarchical")
-                    .on_hover_text("Tree view that fills the canvas")
-                    .clicked()
-                {
-                    self.apply_hierarchical_layout();
-                    self.fit_to_view_next = true;
-                }
 
-                if ui.button("Fit View").clicked() {
-                    self.fit_to_view_next = true;
-                    self.push_toast("Fitting view");
-                }
-
-                if self.layout == AppLayout::Force {
-                    if ui.button("⚙ Simulation").clicked() {
-                        self.show_force_settings = !self.show_force_settings;
-                    }
-                }
-
-                ui.separator();
-                ui.heading("Entity Relationships");
-                ui.checkbox(&mut self.show_cardinality, "Show Cardinality (1:1, 1:N, N:N)")
-                    .on_hover_text("Display relationship cardinality below edge labels");
-                
-                if self.show_cardinality {
-                    // Show relationship summary
-                    ui.collapsing("📊 Relationship Stats", |ui| {
-                        let mut one_to_one = 0;
-                        let mut one_to_many = 0;
-                        let mut many_to_many = 0;
+                    if !is_note_mode {
+                        if ui.button("🧹 Cleanup Orphans").clicked() {
+                            self.push_undo();
+                            let count = cleanup_orphans(&mut self.graph);
+                            self.push_toast(format!("Removed {} orphans", count));
+                            self.change_count += 1;
+                        }
+                        if ui.button("⚙ Settings").clicked() {
+                            self.settings_window.open = true;
+                        }
+                        ui.separator();
+                        ui.label("Layout:");
+                        ui.radio_value(&mut self.layout, AppLayout::Random, "Random")
+                            .on_hover_text("Scatter nodes unpredictably");
+                        ui.radio_value(&mut self.layout, AppLayout::Force, "Force")
+                            .on_hover_text("Physics-based layout");
                         
-                        for edge in self.graph.g().edge_references() {
-                            let card = calculate_edge_cardinality(&self.graph, edge.source(), edge.target());
-                            match card.as_str() {
-                                "1:1" => one_to_one += 1,
-                                "1:N" | "N:1" => one_to_many += 1,
-                                "N:N" => many_to_many += 1,
-                                _ => {}
+                        if ui.radio_value(&mut self.layout, AppLayout::Hierarchical, "Hierarchical")
+                            .on_hover_text("Tree view that fills the canvas")
+                            .clicked()
+                        {
+                            self.apply_hierarchical_layout();
+                            self.fit_to_view_next = true;
+                        }
+
+                        if ui.button("Fit View").clicked() {
+                            self.fit_to_view_next = true;
+                            self.push_toast("Fitting view");
+                        }
+
+                        if self.layout == AppLayout::Force {
+                            if ui.button("⚙ Simulation").clicked() {
+                                self.show_force_settings = !self.show_force_settings;
                             }
                         }
-                        
-                        ui.label(format!("1:1 - {}", one_to_one));
-                        ui.label(format!("1:N - {}", one_to_many));
-                        ui.label(format!("N:N - {}", many_to_many));
-                    });
-                }
+
+                        // Cardinality analysis is disabled in the logmark-lite sidebar.
+                    } else {
+                        ui.separator();
+                        ui.label("Journal mode: focused notes only.");
+                    }
 
                 ui.separator();
                 ui.label("Search nodes/edges:");
@@ -922,34 +837,36 @@ impl App for LogMarkApp {
                 ui.separator();
                 ui.label(format!("Auto-commit after 10 edits (current: {})", self.change_count));
 
-                ui.separator();
-                ui.heading("Lua Debugger");
-                if self.lua_sidebar_open {
-                    if ui.button("Close Debugger").clicked() {
-                        self.lua_sidebar_open = false;
-                    }
+                if !is_note_mode {
                     ui.separator();
-                    ui.label("Variables:");
-                    egui::ScrollArea::vertical()
-                        .id_salt("lua_debugger_vars")
-                        .max_height(100.0)
-                        .show(ui, |ui| {
-                        for (k, v) in &self.lua_engine.variables {
-                            ui.label(format!("{} = {}", k, v));
+                    ui.heading("Lua Debugger");
+                    if self.lua_sidebar_open {
+                        if ui.button("Close Debugger").clicked() {
+                            self.lua_sidebar_open = false;
                         }
-                    });
-                    ui.separator();
-                    ui.label("Output:");
-                    egui::ScrollArea::vertical()
-                        .id_salt("lua_debugger_output")
-                        .max_height(150.0)
-                        .show(ui, |ui| {
-                        ui.monospace(&self.lua_engine.output);
-                    });
-                    ui.label("CPU Time: 0.5 ms");
-                } else {
-                    if ui.button("Open Debugger").clicked() {
-                        self.lua_sidebar_open = true;
+                        ui.separator();
+                        ui.label("Variables:");
+                        egui::ScrollArea::vertical()
+                            .id_salt("lua_debugger_vars")
+                            .max_height(100.0)
+                            .show(ui, |ui| {
+                            for (k, v) in &self.lua_engine.variables {
+                                ui.label(format!("{} = {}", k, v));
+                            }
+                        });
+                        ui.separator();
+                        ui.label("Output:");
+                        egui::ScrollArea::vertical()
+                            .id_salt("lua_debugger_output")
+                            .max_height(150.0)
+                            .show(ui, |ui| {
+                            ui.monospace(&self.lua_engine.output);
+                        });
+                        ui.label("CPU Time: 0.5 ms");
+                    } else {
+                        if ui.button("Open Debugger").clicked() {
+                            self.lua_sidebar_open = true;
+                        }
                     }
                 }
             });
@@ -1085,15 +1002,15 @@ impl App for LogMarkApp {
                                                 ui.monospace(block);
                                                 if ui.button("▶ Run").clicked() {
                                                     self.lua_engine.run_script(
-                                                        block, 
-                                                        &mut self.graph, 
+                                                        block,
+                                                        &mut self.graph,
                                                         &mut self.change_count,
                                                         &mut self.undo_stack,
-                                                        &mut self.redo_stack
+                                                        &mut self.redo_stack,
                                                     );
                                                     self.lua_sidebar_open = true;
                                                 }
-                                                
+
                                                 // Quick actions
                                                 ui.horizontal(|ui| {
                                                     if ui.button("Debug").clicked() {
@@ -1101,7 +1018,6 @@ impl App for LogMarkApp {
                                                     }
                                                     if ui.button("Copy").clicked() {
                                                         ui.ctx().copy_text(block.clone());
-                                                        self.push_toast("Copied to clipboard");
                                                     }
                                                 });
                                             });
@@ -1153,26 +1069,7 @@ impl App for LogMarkApp {
         // Auto-rotate for 3D view
         self.settings_3d.update(ctx);
             
-        // Update cardinality if enabled
-        if self.show_cardinality {
-            let edges: Vec<_> = self.graph.g().edge_indices().collect();
-            for edge_idx in edges {
-                if let Some((source, target)) = self.graph.edge_endpoints(edge_idx) {
-                    let card = calculate_edge_cardinality(&self.graph, source, target);
-                    if let Some(edge) = self.graph.edge_mut(edge_idx) {
-                        edge.payload_mut().cardinality = Some(card);
-                    }
-                }
-            }
-        } else {
-            // Clear cardinality if disabled
-            let edges: Vec<_> = self.graph.g().edge_indices().collect();
-            for edge_idx in edges {
-                if let Some(edge) = self.graph.edge_mut(edge_idx) {
-                    edge.payload_mut().cardinality = None;
-                }
-            }
-        }
+        // Cardinality analysis is disabled in the logmark-lite branch.
 
         // Central Panel - based on current tab
         CentralPanel::default().show(ctx, |ui| {
@@ -1181,14 +1078,25 @@ impl App for LogMarkApp {
                     let (sender, receiver) = std::sync::mpsc::channel();
                     let sink = move |e: GraphEvent| { sender.send(e).ok(); };
 
-                    let settings_interaction = SettingsInteraction::default()
-                        .with_dragging_enabled(true)
-                        .with_node_clicking_enabled(true)
-                        .with_node_selection_enabled(false)
-                        .with_node_selection_multi_enabled(false)
-                        .with_edge_clicking_enabled(true)
-                        .with_edge_selection_enabled(false)
-                        .with_edge_selection_multi_enabled(false);
+                    let settings_interaction = if self.visualization_mode.is_note_mode() {
+                        SettingsInteraction::default()
+                            .with_dragging_enabled(true)
+                            .with_node_clicking_enabled(true)
+                            .with_node_selection_enabled(true)
+                            .with_node_selection_multi_enabled(true)
+                            .with_edge_clicking_enabled(false)
+                            .with_edge_selection_enabled(false)
+                            .with_edge_selection_multi_enabled(false)
+                    } else {
+                        SettingsInteraction::default()
+                            .with_dragging_enabled(true)
+                            .with_node_clicking_enabled(true)
+                            .with_node_selection_enabled(false)
+                            .with_node_selection_multi_enabled(false)
+                            .with_edge_clicking_enabled(true)
+                            .with_edge_selection_enabled(false)
+                            .with_edge_selection_multi_enabled(false)
+                    };
                     
                     let settings_navigation = SettingsNavigation::default()
                         .with_zoom_and_pan_enabled(true)

@@ -6,7 +6,6 @@ use crate::parser::MarkdownParser;
 use regex::Regex;
 use std::collections::HashMap;
 use egui::Vec2;
-use crate::utils::calculate_edge_cardinality;
 
 pub fn handle_wikilinks(
     graph: &mut Graph<LogNodeData, LogEdgeData, Directed, u32, LogNode, LogEdge>,
@@ -103,22 +102,13 @@ pub fn handle_wikilinks(
         if target_idx == node_idx { continue; }
 
         if let Some(&edge_idx) = existing_targets.get(&target_idx) {
-            // Recalculate cardinality for existing edge
-            let card = calculate_edge_cardinality(graph, node_idx, target_idx);
-            
             if let Some(edge) = graph.edge_mut(edge_idx) {
                 if edge.payload().label.as_ref() != Some(&edge_label) {
                     edge.payload_mut().label = Some(edge_label);
                 }
-                edge.payload_mut().cardinality = Some(card);
             }
         } else {
-            let edge_idx = graph.add_edge(node_idx, target_idx, LogEdgeData { label: Some(edge_label), cardinality: None });
-            // Calculate cardinality for new edge
-            let card = calculate_edge_cardinality(graph, node_idx, target_idx);
-            if let Some(edge) = graph.edge_mut(edge_idx) {
-                edge.payload_mut().cardinality = Some(card);
-            }
+            graph.add_edge(node_idx, target_idx, LogEdgeData { label: Some(edge_label) });
         }
     }
 }
